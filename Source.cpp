@@ -27,6 +27,7 @@
 #define TRANSLATE1 22
 #define ROTATION 23
 #define REFLECTION 24
+#define PATTERN 26
 #define MAXX 1018
 #define MAXY 700
 
@@ -40,6 +41,25 @@ GLfloat colors[18][3]={{0.0,0.0,0.0},{1.0,0.0,0.0},{0.0,1.0,0.0},{0.0,0.0,1.0},{
 long matsize=(MAXX-50)*(MAXY-40)*3;
 FILE *fp;
 int screenwidth=MAXX,screenheight=MAXY;
+
+
+GLubyte halftone[] = {
+    0xAA, 0xAA, 0xAA, 0xAA, 0x00, 0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00, 0x00, 0xAA, 0xAA, 0xAA, 0xAA,
+    0xAA, 0xAA, 0xAA, 0xAA, 0x00, 0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00, 0x00, 0xAA, 0xAA, 0xAA, 0xAA,
+    0xAA, 0xAA, 0xAA, 0xAA, 0x00, 0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00, 0x00, 0xAA, 0xAA, 0xAA, 0xAA,
+    0xAA, 0xAA, 0xAA, 0xAA, 0x00, 0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00, 0x00, 0xAA, 0xAA, 0xAA, 0xAA,
+    0xAA, 0xAA, 0xAA, 0xAA, 0x00, 0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00, 0x00, 0xAA, 0xAA, 0xAA, 0xAA,
+    0xAA, 0xAA, 0xAA, 0xAA, 0x00, 0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00, 0x00, 0xAA, 0xAA, 0xAA, 0xAA,
+    0xAA, 0xAA, 0xAA, 0xAA, 0x00, 0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00, 0x00, 0xAA, 0xAA, 0xAA, 0xAA,
+    0xAA, 0xAA, 0xAA, 0xAA, 0x00, 0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00, 0x00, 0xAA, 0xAA, 0xAA, 0xAA};
 
 
 void lineloop(int x1,int y1,int x2,int y2,int x3,int y3,int x4,int y4)
@@ -302,6 +322,8 @@ void disp()
 	rect_draw();
 	fill_draw();
 	glColor3fv(colors[3]);
+	draw_text("Pattern",980,230);
+	draw_text("Fill",990,220);
 	draw_text("Inside",12,368);
 	draw_text("Clip",15,358);
 	draw_text("Outside",7,333);
@@ -769,6 +791,36 @@ void mouse(int button,int state,int x,int y)
 			state1=ERAZE3;
 			return;
 		}
+
+        i+=35;j+=35;
+        /*SPHERE CODE HERE */
+
+        i+=35;j+=35;
+		if(inside_area(970+5,970+45,MAXY-i,MAXY-j,x,y))
+		{
+
+            glColor3fv(colors[17]);
+			polygon(970,280,970,385,970+45,385,970+45,280);
+			polygon(620,20,620,45,MAXX-5,45,MAXX-5,20);
+			boxes(635,660,colors[7]);
+			boxes(600,625,colors[7]);
+		    boxes(565,590,colors[7]);
+			boxes(530,555,colors[7]);
+			boxes(495,520,colors[7]);
+			boxes(460,485,colors[7]);
+			boxes(390,415,colors[7]);
+			boxes(390,415,colors[7]);
+			boxes1(355,380,colors[7]);
+			boxes1(320,345,colors[7]);
+			boxes1(285,310,colors[7]);
+			boxes2(250-35,275-35,colors[8]);
+			glColor3f(0,0,0);
+			draw_text("PATTERN FILLED RECTANGLE - used to draw rectangle filled with pattern ",625,30);
+			disp();
+			glFlush();
+			state1=PATTERN;return;
+		}
+
         ii+=35;jj+=35;
 		if(inside_area(5,45,MAXY-ii,MAXY-jj,x,y))
 		{
@@ -1688,6 +1740,39 @@ void mymove(int mx,int my)
 			}
 		}
 	}
+
+    if(state1==PATTERN)
+	{
+		if(x<MAXX-49 && x>49 && y>50 && y<MAXY-39)
+		{
+			if(!linex && !liney)
+			{
+				glReadPixels(50,50,MAXX-50,MAXY-50,GL_RGB,GL_FLOAT,arr);
+				linex=x;
+				liney=y;
+			}
+			else
+			{
+				drawrect=1;
+                elinex=x;
+				eliney=y;
+				glRasterPos2i(50,50);
+				glDrawPixels(MAXX-50,MAXY-50,GL_RGB,GL_FLOAT,arr);
+                glEnable(GL_POLYGON_STIPPLE);          	
+                glPolygonStipple(halftone);              	
+				glBegin(GL_POLYGON);
+				glVertex2i(linex,liney);
+				glVertex2i(linex,eliney);
+				glVertex2i(elinex,eliney);
+				glVertex2i(elinex,liney);
+				glEnd();
+                glDisable(GL_POLYGON_STIPPLE);  
+     			glFlush();
+			}
+		}
+	}
+
+
 	if(state1==FILLRECT)
 	{
 		if(x<MAXX-49 && x>49 && y>49 && y<MAXY-38)
@@ -1812,13 +1897,19 @@ void display()
 	line(425,5,425,25);
 	line(450,5,450,25);
 	glColor3fv(colors[7]);
-	int x=40,y=65,i;
+	int x=40,y=65,x2,y2,i;
 	for(i=0;i<8;i++)
 	{    
 		polygon(970+5,MAXY-x,970+5,MAXY-y,970+45,MAXY-y,970+45,MAXY-x);
 		x+=35;
 		y+=35;
 	}
+    
+    x2 = x+35+35+35+35;
+    y2=y+35+35+35+35;
+
+	polygon(970+5,MAXY-x2,970+5,MAXY-y2,970+45,MAXY-y2,970+45,MAXY-x2);
+
 	for(i=0;i<6;i++)
 	{    
 		polygon(5,MAXY-x,5,MAXY-y,45,MAXY-y,45,MAXY-x);
@@ -1863,7 +1954,7 @@ void myReshape(int newWidth,int newHeight)
 }
 
 
-void main(int argc, char **argv)
+int main(int argc, char **argv)
 {
 	glutInit(&argc, argv);
 	glutInitDisplayMode(GLUT_SINGLE | GLUT_RGB);
