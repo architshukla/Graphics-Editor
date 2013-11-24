@@ -26,11 +26,13 @@
 #define ERAZE3 21
 #define TRANSLATE1 22
 #define ROTATION 23
+#define REFLECTION 24
 #define MAXX 1018
 #define MAXY 700
 
 int linex=0,liney=0,elinex=0,eliney=0,clr=0,count=0;
-int drawline,drawrect,drawcircle,insideclip,outsideclip,translate,scaling,trans_paste,scale_paste,translate1,trans_paste1,rotate,rotate_paste;
+int drawline,drawrect,drawcircle,insideclip,outsideclip,translate,scaling,trans_paste,scale_paste,translate1,trans_paste1,rotate,rotate_paste,reflection,reflection_paste;
+double c=0,m=1;
 int ax,ay,bx,by,px,py;
 int state1,size=20,ret,savec,openc;
 float arr[MAXX-50][MAXY-50][3],mat[MAXX-50][MAXY-40][3],clip[MAXX-50][MAXY-40][3],mat1[MAXX-50][MAXY-40][3], arr1[MAXX-50][MAXY-50][3];
@@ -307,7 +309,7 @@ void disp()
 	draw_text("Translate",5,293);
 	draw_text("Scaling",8,258);
 	draw_text("Rotation",5,223);
-	draw_text("Reflection",5,188);
+	draw_text("Reflection",3,188);
 	glColor3fv(colors[clr]);
 	polygon(10,10,10,40,40,40,40,10);	
 }
@@ -787,6 +789,7 @@ void mouse(int button,int state,int x,int y)
 			boxes1(285,310,colors[7]);
 			boxes1(250,275,colors[7]);
 			boxes1(215,240,colors[7]);
+			boxes1(180,205,colors[7]);
 			glColor3f(0,0,0);
 			draw_text("INSIDE CLIP - to remove parts inside a selected area",625,30);
 			disp();
@@ -814,6 +817,7 @@ void mouse(int button,int state,int x,int y)
 			boxes1(285,310,colors[7]);
 			boxes1(250,275,colors[7]);
 			boxes1(215,240,colors[7]);
+			boxes1(180,205,colors[7]);
 			glColor3f(0,0,0);
 			draw_text("OUTSIDE CLIP - to remove parts outside a selected area",625,30);
 			disp();
@@ -841,6 +845,7 @@ void mouse(int button,int state,int x,int y)
 			boxes3(285,310,colors[8]);
 			boxes1(250,275,colors[7]);
 			boxes1(215,240,colors[7]);
+			boxes1(180,205,colors[7]);
 			glColor3f(0,0,0);
 			draw_text("TRANSLATE - to shift selected area to desired location",625,30);
 			disp();
@@ -868,6 +873,7 @@ void mouse(int button,int state,int x,int y)
 			boxes1(285,310,colors[7]);
 			boxes3(250,275,colors[8]);
 			boxes1(215,240,colors[7]);
+			boxes1(180,205,colors[7]);
 			glColor3f(0,0,0);
 			draw_text("SCALING - to zoom the selected area to twice its size",625,30);
 			disp();
@@ -895,11 +901,40 @@ void mouse(int button,int state,int x,int y)
 			boxes1(285,310,colors[7]);
 			boxes1(250,275,colors[7]);
 			boxes3(215,240,colors[8]);
+			boxes1(180,205,colors[7]);
 			glColor3f(0,0,0);
-			draw_text("ROTATION - Rotate a figure drawn",625,30);
+			draw_text("ROTATION - Rotate a figure by 30 degrees",625,30);
 			disp();
 			glFlush();
 			state1=ROTATION;
+			return;
+		}
+		ii+=35;jj+=35;
+		if(inside_area(5,45,MAXY-ii,MAXY-jj,x,y))
+		{
+			glColor3fv(colors[17]);
+			polygon(620,20,620,45,MAXX-5,45,MAXX-5,20);
+		    boxes(635,660,colors[7]);
+			boxes(600,625,colors[7]);
+		    boxes(565,590,colors[7]);
+			boxes(530,555,colors[7]);
+			boxes(495,520,colors[7]);
+			boxes(460,485,colors[7]);
+			boxes(425,450,colors[7]);
+			boxes(390,415,colors[7]);
+			glColor3fv(colors[17]);
+			polygon(970,280,970,385,970+45,385,970+45,280);
+			boxes1(355,380,colors[7]);
+			boxes1(320,345,colors[7]);
+			boxes1(285,310,colors[7]);
+			boxes1(250,275,colors[7]);
+			boxes1(215,240,colors[7]);
+			boxes3(180,205,colors[8]);
+			glColor3f(0,0,0);
+			draw_text("REFLECTION - Reflect a figure by y=mx+c (default: m=1, c=0)",625,30);
+			disp();
+			glFlush();
+			state1=REFLECTION;
 			return;
 		}
 		if(inside_area(5,45,MAXY-30,MAXY-5,x,y))
@@ -1059,6 +1094,20 @@ void mouse(int button,int state,int x,int y)
 			state1=ROTATION;
 			return;		
 		}
+		if(inside_area(477,508,MAXY-30,MAXY-5,x,y))
+		{
+			menu(5,45,MAXY-30,MAXY-5,colors[17]);
+			menu(55,95,MAXY-30,MAXY-5,colors[17]);
+			menu(105,145,MAXY-30,MAXY-5,colors[17]);
+			menu(155,195,MAXY-30,MAXY-5,colors[17]);
+			menu(205,245,MAXY-30,MAXY-5,colors[17]);
+			menu(257,297,MAXY-30,MAXY-5,colors[17]);
+			menu(312,358,MAXY-30,MAXY-5,colors[17]);
+			menu(367,408,MAXY-30,MAXY-5,colors[8]);
+			menu_disp();
+			state1=REFLECTION;
+			return;		
+		}
 		if(state1==SPIRAL)
 		{
 			spiral(x,y);
@@ -1092,7 +1141,7 @@ void mouse(int button,int state,int x,int y)
 			x+=35;
 			y+=35;
 		}
-		for(i=0;i<4;i++)
+		for(i=0;i<6;i++)
 		{    
 			polygon(5,MAXY-x,5,MAXY-y,45,MAXY-y,45,MAXY-x);
 			x+=35;
@@ -1200,6 +1249,34 @@ void mouse(int button,int state,int x,int y)
 		glFlush();
 		rotate_paste=0;
 	}
+	if(reflection_paste==1)
+	{ 
+		glRasterPos2i(50,50);
+		glDrawPixels(MAXX-50,MAXY-50,GL_RGB,GL_FLOAT,arr);
+		if(x>=50)			
+			if(y>=50)			
+				if((x+px-1)<=(MAXX-50))
+					if((y+py-1)<=(MAXY-40))
+					{
+						glPushMatrix();
+						GLfloat theta = atan(m)*180.0/3.14159;
+						glTranslatef(0,c,0);
+						glRotatef(theta,0,0,1);
+						glScalef(1,-1,0);
+						glRotatef(-theta,0,0,1);
+						glTranslatef(0,-c,0);
+						glBegin(GL_LINE_LOOP);
+						glVertex2f(ax,ay);
+						glVertex2f(ax,by);
+						glVertex2f(bx,by);
+						glVertex2f(bx,ay);
+						glEnd();
+						glFlush();
+						glPopMatrix();
+					}
+		glFlush();
+		reflection_paste=0;
+	}
 	if(scale_paste==1)
 	{ 
 		glRasterPos2i(50,50);
@@ -1266,11 +1343,19 @@ void mouse(int button,int state,int x,int y)
 		{
 			ax=linex;ay=liney;bx=elinex;by=eliney;
 			px=elinex-linex; py=liney-eliney;
-			glReadPixels(linex,eliney+1,px-1,py-1,GL_RGB,GL_FLOAT,clip);
-			printf("HERE");
+			// glReadPixels(linex,eliney+1,px-1,py-1,GL_RGB,GL_FLOAT,clip);
 			rotate_paste=1;
 			glFlush();
 			rotate=0;
+		}
+		if(reflection)
+		{
+			ax=linex;ay=liney;bx=elinex;by=eliney;
+			px=elinex-linex; py=liney-eliney;
+			// glReadPixels(linex,eliney+1,px-1,py-1,GL_RGB,GL_FLOAT,clip);
+			reflection_paste=1;
+			glFlush();
+			reflection=0;
 		}
 		if(scaling)
 		{
@@ -1461,6 +1546,29 @@ void mymove(int mx,int my)
 			{
 				drawrect=1;
 				rotate=1;
+				elinex=x;
+				eliney=y;
+				glRasterPos2i(50,50);
+				glDrawPixels(MAXX-50,MAXY-50,GL_RGB,GL_FLOAT,arr);
+				lineloop(linex,liney,linex-1,eliney,elinex,eliney,elinex,liney);
+				glColor3fv(colors[0]);
+			}						
+		}
+	}
+	if(state1==REFLECTION)
+	{
+		if(x<MAXX-49 && x>49 && y>50 && y<MAXY-39)
+		{
+			if(!linex && !liney)
+			{
+				glReadPixels(50,50,MAXX-50,MAXY-50,GL_RGB,GL_FLOAT,arr);
+				linex=x;
+				liney=y;
+			}
+			else
+			{
+				drawrect=1;
+				reflection=1;
 				elinex=x;
 				eliney=y;
 				glRasterPos2i(50,50);
