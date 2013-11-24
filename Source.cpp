@@ -558,7 +558,7 @@ void mouse(int button,int state,int x,int y)
 			boxes1(355,380,colors[7]);
 			boxes1(320,345,colors[7]);
 			boxes1(285,310,colors[7]);
-			boxes1(250,275,colors[7]);
+			boxes(250,275,colors[7]);
 			boxes2(250-35,275-35,colors[7]);
 			glColor3f(0,0,0);
 			draw_text("PENCIL - used for free hand drawing",625,30);
@@ -583,7 +583,7 @@ void mouse(int button,int state,int x,int y)
 			boxes1(355,380,colors[7]);
 			boxes1(320,345,colors[7]);
 			boxes1(285,310,colors[7]);
-			boxes1(250,275,colors[7]);
+			boxes(250,275,colors[7]);
 			boxes(250-35,275-35,colors[7]);
 			glColor3f(0,0,0);
 			draw_text("BRUSH - used for free hand drawing with size larger than pencil",625,30);
@@ -608,7 +608,7 @@ void mouse(int button,int state,int x,int y)
 			boxes1(355,380,colors[7]);
 			boxes1(320,345,colors[7]);
 			boxes1(285,310,colors[7]);
-			boxes1(250,275,colors[7]);
+			boxes(250,275,colors[7]);
 			boxes(250-35,275-35,colors[7]);
 			glColor3f(0,0,0);
 			draw_text("LINE - used to draw a line of any length between two desired points",625,30);
@@ -633,7 +633,7 @@ void mouse(int button,int state,int x,int y)
 			boxes1(355,380,colors[7]);
 			boxes1(320,345,colors[7]);
 			boxes1(285,310,colors[7]);
-			boxes1(250,275,colors[7]);
+			boxes(250,275,colors[7]);
 			boxes(250-35,275-35,colors[7]);
 			glColor3f(0,0,0);
 			draw_text("RECTANGLE - used to draw empty rectangle of desired size",625,30);
@@ -658,7 +658,7 @@ void mouse(int button,int state,int x,int y)
 			boxes1(355,380,colors[7]);
 			boxes1(320,345,colors[7]);
 			boxes1(285,310,colors[7]);
-			boxes1(250,275,colors[7]);
+			boxes(250,275,colors[7]);
 			boxes(250-35,275-35,colors[7]);
 			glColor3f(0,0,0);
 			draw_text("FILLED RECTANGLE - used to draw rectangle filled with selected color ",625,30);
@@ -683,7 +683,7 @@ void mouse(int button,int state,int x,int y)
 			boxes1(355,380,colors[7]);
 			boxes1(320,345,colors[7]);
 			boxes1(285,310,colors[7]);
-			boxes1(250,275,colors[7]);
+			boxes(250,275,colors[7]);
 			boxes(250-35,275-35,colors[7]);
 			glColor3f(0,0,0);
 			draw_text("SPRAY - press + to increase size , press - to decrease size",625,30);
@@ -708,7 +708,7 @@ void mouse(int button,int state,int x,int y)
 			boxes1(355,380,colors[7]);
 			boxes1(320,345,colors[7]);
 			boxes1(285,310,colors[7]);
-			boxes1(250,275,colors[7]);
+			boxes(250,275,colors[7]);
 			boxes(250-35,275-35,colors[7]);
 			glColor3f(0,0,0);
 			draw_text("CIRCLE - used to draw circle of desired radius",625,30);
@@ -735,7 +735,7 @@ void mouse(int button,int state,int x,int y)
 			boxes(320,345,colors[7]);
 			boxes(285,310,colors[7]);
 			boxes(250-35,275-35,colors[7]);
-			
+			boxes(250,275,colors[7]);
 			glColor3f(1,0.7,0.8);
 			polygon(970+20,365,970+20,370,970+30,370,970+30,365);
 			polygon(970+15,360-35,970+15,375-35,970+35,375-35,970+35,360-35);
@@ -768,7 +768,8 @@ void mouse(int button,int state,int x,int y)
 			boxes4(355,380,colors[8]);
 			boxes(320,345,colors[7]);
 			boxes(285,310,colors[7]);
-			glColor3f(1,0.7,0.8);
+			boxes(250,275,colors[7]);
+            glColor3f(1,0.7,0.8);
 			//polygon(970+20,365,970+20,370,970+30,370,970+30,365);
 			polygon(970+15,360-35,970+15,375-35,970+35,375-35,970+35,360-35);
 			polygon(970+10,355-70,970+10,380-70,970+40,380-70,970+40,355-70);
@@ -800,7 +801,8 @@ void mouse(int button,int state,int x,int y)
 			boxes(355,380,colors[7]);
 			boxes4(320,345,colors[8]);
 			boxes(285,310,colors[7]);
-			glColor3f(1,0.7,0.8);
+            boxes(250,275,colors[7]);			
+            glColor3f(1,0.7,0.8);
 			polygon(970+20,365,970+20,370,970+30,370,970+30,365);
 			//polygon(970+15,360-35,970+15,375-35,970+35,375-35,970+35,360-35);
 			polygon(970+10,355-70,970+10,380-70,970+40,380-70,970+40,355-70);
@@ -832,6 +834,7 @@ void mouse(int button,int state,int x,int y)
 			boxes(355,380,colors[7]);
 			boxes(320,345,colors[7]);
 			boxes4(285,310,colors[8]);
+            boxes(250,275,colors[7]);
 			glColor3f(1,0.7,0.8);
 			polygon(970+20,365,970+20,370,970+30,370,970+30,365);
 			polygon(970+15,360-35,970+15,375-35,970+35,375-35,970+35,360-35);
@@ -867,6 +870,7 @@ void mouse(int button,int state,int x,int y)
 			boxes1(320,345,colors[7]);
 			boxes1(285,310,colors[7]);
 			boxes2(250,275,colors[8]);
+            boxes(250-35,275-35,colors[7]);
 
 			glColor3f(0,0,0);
 			draw_text("SPHERE - used to draw a sphere",625,30);
@@ -896,6 +900,7 @@ void mouse(int button,int state,int x,int y)
 			boxes1(320,345,colors[7]);
 			boxes1(285,310,colors[7]);
 			boxes2(250-35,275-35,colors[8]);
+            boxes(250,275,colors[7]);
 			glColor3f(0,0,0);
 			draw_text("PATTERN FILLED RECTANGLE - used to draw rectangle filled with pattern ",625,30);
 			disp();
