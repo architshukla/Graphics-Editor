@@ -27,12 +27,16 @@
 #define TRANSLATE1 22
 #define ROTATION 23
 #define REFLECTION 24
+#define SPHERE 25
 #define PATTERN 26
 #define MAXX 1018
 #define MAXY 700
+#define MAXZ 700
+#define PI 3.141529
 
 int linex=0,liney=0,elinex=0,eliney=0,clr=0,count=0;
 int drawline,drawrect,drawcircle,insideclip,outsideclip,translate,scaling,trans_paste,scale_paste,translate1,trans_paste1,rotate,rotate_paste,reflection,reflection_paste;
+int drawsphere;
 double c=0,m=1;
 int ax,ay,bx,by,px,py;
 int state1,size=20,ret,savec,openc;
@@ -60,6 +64,50 @@ GLubyte halftone[] = {
     0x00, 0x00, 0x00, 0x00, 0xAA, 0xAA, 0xAA, 0xAA,
     0xAA, 0xAA, 0xAA, 0xAA, 0x00, 0x00, 0x00, 0x00,
     0x00, 0x00, 0x00, 0x00, 0xAA, 0xAA, 0xAA, 0xAA};
+
+
+void manualDrawSphere(int h,int k,int r)
+{
+	float theta = 0, phi = 0, deltaTheta = PI / 9, deltaPhi = PI / 9;
+	float z1, x1, y1, z2, x2, y2, z3, x3, y3, z4, x4, y4;	
+	
+	glBegin(GL_QUAD_STRIP);
+
+	for(theta = 0; theta <= 2 * PI ; theta += deltaTheta)
+	{
+		for(phi = 0; phi <= PI; phi += deltaPhi)
+		{
+
+			z1 = r * sinf(phi + deltaPhi) * cosf(theta + deltaTheta);
+			x1 = r * sinf(phi + deltaPhi) * sinf(theta + deltaTheta);
+			y1 = r * cosf(phi + deltaPhi);
+
+			z2 = r * sinf(phi) * cosf(theta + deltaTheta);
+			x2 = r * sinf(phi) * sinf(theta + deltaTheta);
+			y2 = r * cosf(phi);
+
+			z3 = r * sinf(phi) * cosf(theta);
+			x3 = r * sinf(phi) * sinf(theta);
+			y3 = r * cosf(phi);
+
+			z4 = r * sinf(phi + deltaPhi) * cosf(theta);
+			x4 = r * sinf(phi + deltaPhi) * sinf(theta);
+			y4 = r * cosf(phi + deltaPhi);
+
+			glColor3f(cosf(phi), sinf(phi), sinf(phi));
+			glVertex3f(h+x4,k+y4, z4);
+			glColor3f(cosf(phi), sinf(phi), cosf(phi));
+			glVertex3f(h+x1,k+y1, z1);
+			glColor3f(cosf(theta), sinf(theta), sinf(theta));
+			glVertex3f(h+x2,k+y2, z2);
+			glColor3f(cosf(theta), sinf(theta), cosf(theta));
+			glVertex3f(h+x3,k+y3, z3);
+		}
+	}
+	glEnd();
+
+	return;
+}
 
 
 void lineloop(int x1,int y1,int x2,int y2,int x3,int y3,int x4,int y4)
@@ -322,6 +370,7 @@ void disp()
 	rect_draw();
 	fill_draw();
 	glColor3fv(colors[3]);
+    draw_text("Sphere",978,MAXY-(40+402));
 	draw_text("Pattern",980,230);
 	draw_text("Fill",990,220);
 	draw_text("Inside",12,368);
@@ -801,7 +850,32 @@ void mouse(int button,int state,int x,int y)
 		}
 
         i+=35;j+=35;
-        /*SPHERE CODE HERE */
+        if(inside_area(970+5,970+45,MAXY-i,MAXY-j,x,y))
+		{
+			glColor3fv(colors[17]);
+			polygon(620,20,620,45,MAXX-5,45,MAXX-5,20);
+			
+			boxes(635,660,colors[7]);
+			boxes(600,625,colors[7]);
+		    boxes(565,590,colors[7]);
+			boxes(530,555,colors[7]);
+			boxes(495,520,colors[7]);
+			boxes(460,485,colors[7]);
+			boxes(425,450,colors[7]);
+			boxes(390,415,colors[7]);
+			boxes1(355,380,colors[7]);
+			boxes1(320,345,colors[7]);
+			boxes1(285,310,colors[7]);
+			boxes2(250,275,colors[8]);
+
+			glColor3f(0,0,0);
+			draw_text("SPHERE - used to draw a sphere",625,30);
+			disp();
+			glFlush();
+			state1=SPHERE;
+			return;
+		}
+
 
         i+=35;j+=35;
 		if(inside_area(970+5,970+45,MAXY-i,MAXY-j,x,y))
@@ -1447,6 +1521,26 @@ void mouse(int button,int state,int x,int y)
 			eliney=0;
 			drawrect=0;
 		}
+        if(drawsphere)
+		{
+			double r=sqrt(pow((double)(elinex-linex),2)+(pow((double)(eliney-liney),2)));
+			if((linex-r)<50)
+				r=linex-50;
+			if((liney-r)<50)
+				r=liney-50;
+			if((linex+r)>(MAXX-51))
+				r=MAXX-51-linex;
+			if((liney+r)>(MAXY-41))
+				r=MAXY-41-liney;
+			manualDrawSphere(linex,liney,r);
+			glFlush();
+			linex=0;
+			liney=0;
+			elinex=0;
+			eliney=0;
+			drawsphere=0;	
+		}
+		
 		if(drawcircle)
 		{
 			double r=sqrt(pow((double)(elinex-linex),2)+(pow((double)(eliney-liney),2)));
@@ -1749,6 +1843,39 @@ void mymove(int mx,int my)
 		}
 	}
 
+        if(state1==SPHERE)
+		{
+			if(x<MAXX-49 && x>49 && y>49 && y<MAXY-39)
+			{
+				if(!linex && !liney)
+				{
+					glReadPixels(50,50,MAXX-50,MAXY-50,GL_RGB,GL_FLOAT,arr);
+					linex=x;
+					liney=y;
+				}	
+				else
+				{
+					drawsphere=1;
+					elinex=x;
+					eliney=y;
+					glRasterPos2i(50,50);
+					glDrawPixels(MAXX-50,MAXY-50,GL_RGB,GL_FLOAT,arr);
+					double r=sqrt(pow((double)(elinex-linex),2)+(pow((double)(eliney-liney),2)));
+					if((linex-r)<50)
+						r=linex-50;
+					if((liney-r)<50)
+						r=liney-50;
+					if((linex+r)>(MAXX-51))
+						r=MAXX-51-linex;
+					if((liney+r)>(MAXY-41))
+						r=MAXY-41-liney;
+					manualDrawSphere(linex,liney,r);				
+					glFlush();			
+				}
+			}
+		}
+
+
     if(state1==PATTERN)
 	{
 		if(x<MAXX-49 && x>49 && y>50 && y<MAXY-39)
@@ -1916,6 +2043,7 @@ void display()
     x2 = x+35+35+35+35;
     y2=y+35+35+35+35;
 
+	polygon(970+5,MAXY-(40+385),970+5,MAXY-(65+385),970+45,MAXY-(65+385),970+45,MAXY-(40+385));	
 	polygon(970+5,MAXY-x2,970+5,MAXY-y2,970+45,MAXY-y2,970+45,MAXY-x2);
 
 	for(i=0;i<6;i++)
@@ -1957,14 +2085,24 @@ void myReshape(int newWidth,int newHeight)
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	glMatrixMode(GL_PROJECTION);
 	glLoadIdentity();
-	gluOrtho2D(0.0, MAXX, 0.0,MAXY);
+	glOrtho(0.0,MAXX,0.0,MAXY,0.0,MAXZ);
 	glColor3f(0.0, 0.0, 0.0);
 }
 
+void minit()
+{		
+	glClearColor(1,1,1,1);
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	glMatrixMode(GL_PROJECTION);
+	glLoadIdentity();
+	glOrtho(0.0,MAXX,0.0,MAXY,0.0,MAXZ);
+	glColor3f(0.0,0.0,0.0);
+}
 
 int main(int argc, char **argv)
 {
 	glutInit(&argc, argv);
+    minit();
 	glutInitDisplayMode(GLUT_SINGLE | GLUT_RGB);
 	glutInitWindowSize(MAXX, MAXY);
 	glutInitWindowPosition(0,0);
