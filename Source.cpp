@@ -1390,7 +1390,7 @@ void mymove(int mx,int my)
 			{
 				drawrect=1;
 				translate=1;
-				rotate=1;
+				translate=1;
 				elinex=x;
 				eliney=y;
 				glRasterPos2i(50,50);
