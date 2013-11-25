@@ -1,15 +1,3 @@
-                                                                     
-                                                                     
-                                                                     
-                                             
-// ed.cpp : Defines the entry point for the console application.
-//
-
-//#include "stdafx.h"
-
-
-//#include "stdafx.h"
-//#include "stdafx.h"
 #include<stdio.h>
 #include<math.h>
 #include<stdlib.h>
@@ -40,11 +28,16 @@
 #define BUCKET 24
 #define FILLTRI 25
 #define TRI 26
+#define REFLECTION 27
+#define ROTATION 28
 #define MAXX 1018
 #define MAXY 700
 
 int linex=0,liney=0,elinex=0,eliney=0,clr=0,count=0;
 int drawline,drawrect,drawcircle,insideclip,outsideclip,translate,scaling,trans_paste,scale_paste,translate1,trans_paste1;
+int rotate,rotate_paste;
+int reflection,reflection_paste;
+double m=1,c=0;
 int ax,ay,bx,by,px,py;
 int state1,size=20,ret,savec,openc;
 float arr[MAXX-50][MAXY-50][3],mat[MAXX-50][MAXY-40][3],clip[MAXX-50][MAXY-40][3],mat1[MAXX-50][MAXY-40][3], arr1[MAXX-50][MAXY-50][3];
@@ -242,8 +235,8 @@ void spiral(int cx, int cy)
 		x3=t*cos(t)*2+cx;
 		y3=t*sin(t)*2+cy;
 		putpixel(x3,y3);
-		glFlush();
 	}
+	glFlush();
 }
 
 void brush()
@@ -278,18 +271,18 @@ void eraser()
 void tri()
 {
    glBegin(GL_LINE_LOOP);
-   glVertex2i(10,120);
-   glVertex2i(25,130);
-   glVertex2i(40,120);
+   glVertex2i(10,225);//120
+   glVertex2i(25,235);
+   glVertex2i(40,225);
    glEnd();
 
 }
 void fill_tri()
 {
  glBegin(GL_POLYGON);
-   glVertex2i(10,150);
-   glVertex2i(25,160);
-   glVertex2i(40,150);
+   glVertex2i(10,255);//150
+   glVertex2i(25,265);
+   glVertex2i(40,255);
    glEnd();
 }
 void spray_draw()
@@ -333,19 +326,18 @@ void disp()
 	fill_draw();
 	fill_tri();
 	tri();
-		draw_text("Package developed by RAVI N RAMIT",625,10);
+	draw_text("Graphics Package",625,10);
 	glColor3fv(colors[3]);
-	//draw_text("Inside",12,368);
-	draw_text("Clip",15,358);
-	draw_text("Outside",7,333);
-	draw_text("Clip",15,323);
-	draw_text("Translate",5,293);
-	draw_text("Scaling",8,258);
-    
-	draw_text("Spiral",8,188);
-	//draw_text("",8,153);
+	draw_text("Inside",12,438);
+	draw_text("Clip",15,428);
+	draw_text("Outside",7,403);
+	draw_text("Clip",15,393);
+	draw_text("Translate",5,363);
+	draw_text("Scaling",8,328);
+	draw_text("Spiral",8,293);
+	draw_text("Rotation",5,188);
+	draw_text("Reflection",3,153);
 	glColor3fv(colors[clr]);
-	polygon(10,10,10,40,40,40,40,10);	
 }
 
 void menu_disp()
@@ -526,7 +518,7 @@ void mouse(int button,int state,int x,int y)
 			boxes1(285,310,colors[7]);
 			boxes1(250,275,colors[7]);
 			glColor3f(0,0,0);
-			//draw_text("PENCIL - used for free hand drawing",625,30);
+			draw_text("PENCIL - used for free hand drawing",625,30);
 			disp();
 			glFlush();
 			state1=PENCIL;return;
@@ -681,7 +673,7 @@ void mouse(int button,int state,int x,int y)
 			return;
 		}			
 		i+=35;j+=35;
-		int ii=i,jj=j;
+		int ii=i-70,jj=j-70;
 		if(inside_area(970+5,970+45,MAXY-i,MAXY-j,x,y))
 		{
 			glColor3fv(colors[17]);
@@ -830,10 +822,15 @@ void mouse(int button,int state,int x,int y)
 			boxes(390,415,colors[7]);
 			glColor3fv(colors[17]);
 			polygon(970,280,970,385,970+45,385,970+45,280);
-			/*boxes3(355,380,colors[8]);
+			boxes3(425,450,colors[8]);
+			boxes1(390,415,colors[7]);
+			boxes1(355,380,colors[7]);
 			boxes1(320,345,colors[7]);
 			boxes1(285,310,colors[7]);
-			boxes1(250,275,colors[7]);*/
+			boxes1(250,275,colors[7]);
+			boxes1(215,240,colors[7]);
+			boxes1(180,205,colors[7]);
+			boxes1(145,170,colors[7]);
 			glColor3f(0,0,0);
 			draw_text("INSIDE CLIP - to remove parts inside a selected area",625,30);
 			disp();
@@ -856,10 +853,15 @@ void mouse(int button,int state,int x,int y)
 			boxes(390,415,colors[7]);
 			glColor3fv(colors[17]);
 			polygon(970,280,970,385,970+45,385,970+45,280);
-			/*boxes1(355,380,colors[7]);
-			boxes3(320,345,colors[8]);
+			boxes1(425,450,colors[7]);
+			boxes3(390,415,colors[8]);
+			boxes1(355,380,colors[7]);
+			boxes1(320,345,colors[7]);
 			boxes1(285,310,colors[7]);
-			boxes1(250,275,colors[7]);*/
+			boxes1(250,275,colors[7]);
+			boxes1(215,240,colors[7]);
+			boxes1(180,205,colors[7]);
+			boxes1(145,170,colors[7]);
 			glColor3f(0,0,0);
 			draw_text("OUTSIDE CLIP - to remove parts outside a selected area",625,30);
 			disp();
@@ -882,10 +884,15 @@ void mouse(int button,int state,int x,int y)
 			boxes(390,415,colors[7]);
 			glColor3fv(colors[17]);
 			polygon(970,280,970,385,970+45,385,970+45,280);
-			/*boxes1(355,380,colors[7]);
+			boxes1(425,450,colors[7]);
+			boxes1(390,415,colors[7]);
+			boxes3(355,380,colors[8]);
 			boxes1(320,345,colors[7]);
-			boxes3(285,310,colors[8]);
-			boxes1(250,275,colors[7]);*/
+			boxes1(285,310,colors[7]);
+			boxes1(250,275,colors[7]);
+			boxes1(215,240,colors[7]);
+			boxes3(180,205,colors[7]);
+			boxes1(145,170,colors[7]);
 			glColor3f(0,0,0);
 			draw_text("TRANSLATE - to shift selected area to desired location",625,30);
 			disp();
@@ -908,10 +915,15 @@ void mouse(int button,int state,int x,int y)
 			boxes(390,415,colors[7]);
 			glColor3fv(colors[17]);
 			polygon(970,280,970,385,970+45,385,970+45,280);
-			/*boxes1(355,380,colors[7]);
-			boxes1(320,345,colors[7]);
+			boxes1(425,450,colors[7]);
+			boxes1(390,415,colors[7]);
+			boxes1(355,380,colors[7]);
+			boxes3(320,345,colors[8]);
 			boxes1(285,310,colors[7]);
-			boxes3(250,275,colors[8]);*/
+			boxes1(250,275,colors[7]);
+			boxes1(215,240,colors[7]);
+			boxes1(180,205,colors[7]);
+			boxes1(145,170,colors[7]);
 			glColor3f(0,0,0);
 			draw_text("SCALING - to zoom the selected area to twice its size",625,30);
 			disp();
@@ -920,7 +932,7 @@ void mouse(int button,int state,int x,int y)
 			return;
 		}
 		/* SPIRAL CURVE */
-		ii+=70;jj+=70;
+		ii+=35;jj+=35;
 		if(inside_area(5,45,MAXY-ii,MAXY-jj,x,y))
 		{
 			glColor3fv(colors[17]);
@@ -935,10 +947,15 @@ void mouse(int button,int state,int x,int y)
 			boxes(390,415,colors[7]);
 			glColor3fv(colors[17]);
 			polygon(970,280,970,385,970+45,385,970+45,280);
-			/*boxes1(355,380,colors[7]);
+			boxes1(425,450,colors[7]);
+			boxes1(390,415,colors[7]);
+			boxes1(355,380,colors[7]);
 			boxes1(320,345,colors[7]);
-			boxes1(285,310,colors[7]);
-			boxes3(250,275,colors[8]);*/
+			boxes3(285,310,colors[8]);
+			boxes1(250,275,colors[7]);
+			boxes1(215,240,colors[7]);
+			boxes1(180,205,colors[7]);
+			boxes1(145,170,colors[7]);
 			glColor3f(0,0,0);
 			draw_text("Spiral - draws a spiral curve ",625,30);
 			disp();
@@ -963,10 +980,15 @@ void mouse(int button,int state,int x,int y)
 			boxes(390,415,colors[7]);
 			glColor3fv(colors[17]);
 			polygon(970,280,970,385,970+45,385,970+45,280);
-			/*boxes1(355,380,colors[7]);
+			boxes1(425,450,colors[7]);
+			boxes1(390,415,colors[7]);
+			boxes1(355,380,colors[7]);
 			boxes1(320,345,colors[7]);
 			boxes1(285,310,colors[7]);
-			boxes3(250,275,colors[8]);*/
+			boxes3(250,275,colors[8]);
+			boxes1(215,240,colors[7]);
+			boxes1(180,205,colors[7]);
+			boxes1(145,170,colors[7]);
 			glColor3f(0,0,0);
 			draw_text("Fill triangle - draws filled triangle ",625,30);
 			disp();
@@ -989,10 +1011,15 @@ void mouse(int button,int state,int x,int y)
 			boxes(390,415,colors[7]);
 			glColor3fv(colors[17]);
 			polygon(970,280,970,385,970+45,385,970+45,280);
-			/*boxes1(355,380,colors[7]);
+			boxes1(425,450,colors[7]);
+			boxes1(390,415,colors[7]);
+			boxes1(355,380,colors[7]);
 			boxes1(320,345,colors[7]);
 			boxes1(285,310,colors[7]);
-			boxes3(250,275,colors[8]);*/
+			boxes1(250,275,colors[7]);
+			boxes3(215,240,colors[8]);
+			boxes1(180,205,colors[7]);
+			boxes1(145,170,colors[7]);
 			glColor3f(0,0,0);
 			draw_text("Triangle - draws a triangle ",625,30);
 			disp();
@@ -1000,7 +1027,71 @@ void mouse(int button,int state,int x,int y)
 			state1=TRI;
 			return;
 		}
+		ii+=35;jj+=35;
+		if(inside_area(5,45,MAXY-ii,MAXY-jj,x,y))
+		{
+			glColor3fv(colors[17]);
+			polygon(620,20,620,45,MAXX-5,45,MAXX-5,20);
+		    boxes(635,660,colors[7]);
+			boxes(600,625,colors[7]);
+		    boxes(565,590,colors[7]);
+			boxes(530,555,colors[7]);
+			boxes(495,520,colors[7]);
+			boxes(460,485,colors[7]);
+			boxes(425,450,colors[7]);
+			boxes(390,415,colors[7]);
+			glColor3fv(colors[17]);
+			polygon(970,280,970,385,970+45,385,970+45,280);
+			boxes1(425,450,colors[7]);
+			boxes1(390,415,colors[7]);
+			boxes1(355,380,colors[7]);
+			boxes1(320,345,colors[7]);
+			boxes1(285,310,colors[7]);
+			boxes1(250,275,colors[7]);
+			boxes1(215,240,colors[7]);
+			boxes3(180,205,colors[8]);
+			boxes1(145,170,colors[7]);
+			glColor3f(0,0,1);
+			draw_text("ROTATION - Rotate a figure by 30 degrees",625,30);
+			disp();
+			glFlush();
+			state1=ROTATION;
+			return;
+		}
+		ii+=35;jj+=35;
+		if(inside_area(5,45,MAXY-ii,MAXY-jj,x,y))
+		{
+			glColor3fv(colors[17]);
+			polygon(620,20,620,45,MAXX-5,45,MAXX-5,20);
+		    boxes(635,660,colors[7]);
+			boxes(600,625,colors[7]);
+		    boxes(565,590,colors[7]);
+			boxes(530,555,colors[7]);
+			boxes(495,520,colors[7]);
+			boxes(460,485,colors[7]);
+			boxes(425,450,colors[7]);
+			boxes(390,415,colors[7]);
+			glColor3fv(colors[17]);
+			polygon(970,280,970,385,970+45,385,970+45,280);
+			boxes1(425,450,colors[7]);
+			boxes1(390,415,colors[7]);
+			boxes1(355,380,colors[7]);
+			boxes1(320,345,colors[7]);
+			boxes1(285,310,colors[7]);
+			boxes1(250,275,colors[7]);
+			boxes1(215,240,colors[7]);
+			boxes1(180,205,colors[7]);
+			boxes3(145,170,colors[8]);
+			glColor3f(0,0,1);
+			draw_text("REFLECTION - Reflect a figure by y=mx+c (default: m=1, c=0)",625,30);
+			disp();
+			glFlush();
+			state1=REFLECTION;
+			return;
+		}
 		/* End of bucket */
+
+		
 		if(inside_area(5,45,MAXY-30,MAXY-5,x,y))
 		{
 			/*menu(5,45,MAXY-30,MAXY-5,colors[8]);
@@ -1186,14 +1277,16 @@ void mouse(int button,int state,int x,int y)
 			x+=35;
 			y+=35;
 		}
-		for(i=0;i<8;i++)
-		{    
-			if(i!=4)
+		x-=70;
+		y-=70;
+		for(i=0;i<9;i++)
+		{
 			polygon(5,MAXY-x,5,MAXY-y,45,MAXY-y,45,MAXY-x);
 			x+=35;
 			y+=35;
 		}
 		disp();
+		polygon(10,10,10,40,40,40,40,10);
 	}
 	if(state1==SAVE && savec==0)
 	{
@@ -1289,12 +1382,67 @@ void mouse(int button,int state,int x,int y)
 		glPixelZoom(1,1);
 		scale_paste=0;
 	}
+	if(rotate_paste==1)
+	{ 
+		glRasterPos2i(50,50);
+		glDrawPixels(MAXX-50,MAXY-50,GL_RGB,GL_FLOAT,arr);
+		if(x>=50)			
+			if(y>=50)			
+				if((x+px-1)<=(MAXX-50))
+					if((y+py-1)<=(MAXY-40))
+					{
+						glPushMatrix();
+						glTranslatef(x,y,0);
+						glRotatef(30,0,0,1);
+						glTranslatef(-x,-y,0);
+						glBegin(GL_LINE_LOOP);
+						glVertex2f(x,y);
+						glVertex2f(x,y+py);
+						glVertex2f(x+px,y+py);
+						glVertex2f(x+px,y);
+						glEnd();
+						glFlush();
+						glPopMatrix();
+					}
+		glFlush();
+		rotate_paste=0;
+	}
+	if(reflection_paste==1)
+	{ 
+		glRasterPos2i(50,50);
+		glDrawPixels(MAXX-50,MAXY-50,GL_RGB,GL_FLOAT,arr);
+		if(x>=50)			
+			if(y>=50)			
+				if((x+px-1)<=(MAXX-50))
+					if((y+py-1)<=(MAXY-40))
+					{
+						glPushMatrix();
+						GLfloat theta = atan(m)*180.0/3.14159;
+						glTranslatef(0,c,0);
+						glRotatef(theta,0,0,1);
+						glScalef(1,-1,0);
+						glRotatef(-theta,0,0,1);
+						glTranslatef(0,-c,0);
+						glBegin(GL_LINE_LOOP);
+						glVertex2f(ax,ay);
+						glVertex2f(ax,by);
+						glVertex2f(bx,by);
+						glVertex2f(bx,ay);
+						glEnd();
+						glFlush();
+						glPopMatrix();
+					}
+		glFlush();
+		reflection_paste=0;
+	}
 	if(state1==EXIT)
 	{
 		exit(0);
 	}	
 	if(state==GLUT_UP)
 	{
+		disp();
+		polygon(10,10,10,40,40,40,40,10);
 		if(outsideclip)
 		{
 			px=elinex-linex; py=liney-eliney;
@@ -1331,7 +1479,23 @@ void mouse(int button,int state,int x,int y)
 			glReadPixels(linex,eliney+1,px-1,py-1,GL_RGB,GL_FLOAT,clip);			
 			trans_paste1=1;
 			translate1=0;
-		}		
+		}
+		if(rotate)
+		{
+			ax=linex;ay=liney;bx=elinex;by=eliney;
+			px=elinex-linex; py=liney-eliney;
+			rotate_paste=1;
+			glFlush();
+			rotate=0;
+		}
+		if(reflection)
+		{
+			ax=linex;ay=liney;bx=elinex;by=eliney;
+			px=elinex-linex; py=liney-eliney;
+			reflection_paste=1;
+			glFlush();
+			reflection=0;
+		}
 		if(scaling)
 		{
 			ax=linex;ay=liney;bx=elinex;by=eliney;
@@ -1497,6 +1661,52 @@ void mymove(int mx,int my)
 			{
 				drawrect=1;
 				scaling=1;
+				elinex=x;
+				eliney=y;
+				glRasterPos2i(50,50);
+				glDrawPixels(MAXX-50,MAXY-50,GL_RGB,GL_FLOAT,arr);
+				lineloop(linex,liney,linex-1,eliney,elinex,eliney,elinex,liney);
+				glColor3fv(colors[0]);
+			}						
+		}
+	}
+	if(state1==ROTATION)
+	{
+		if(x<MAXX-49 && x>49 && y>50 && y<MAXY-39)
+		{
+			if(!linex && !liney)
+			{
+				glReadPixels(50,50,MAXX-50,MAXY-50,GL_RGB,GL_FLOAT,arr);
+				linex=x;
+				liney=y;
+			}
+			else
+			{
+				drawrect=1;
+				rotate=1;
+				elinex=x;
+				eliney=y;
+				glRasterPos2i(50,50);
+				glDrawPixels(MAXX-50,MAXY-50,GL_RGB,GL_FLOAT,arr);
+				lineloop(linex,liney,linex-1,eliney,elinex,eliney,elinex,liney);
+				glColor3fv(colors[0]);
+			}						
+		}
+	}
+	if(state1==REFLECTION)
+	{
+		if(x<MAXX-49 && x>49 && y>50 && y<MAXY-39)
+		{
+			if(!linex && !liney)
+			{
+				glReadPixels(50,50,MAXX-50,MAXY-50,GL_RGB,GL_FLOAT,arr);
+				linex=x;
+				liney=y;
+			}
+			else
+			{
+				drawrect=1;
+				reflection=1;
 				elinex=x;
 				eliney=y;
 				glRasterPos2i(50,50);
@@ -1811,10 +2021,11 @@ void display()
 		x+=35;
 		y+=35;
 	}
-	for(i=0;i<8;i++)
+	x-=70;
+	y-=70;
+	for(i=0;i<9;i++)
 	{    
-		if(i!=4)
-		polygon(5,MAXY-x,5,MAXY-y,45,MAXY-y,45,MAXY-x);             // Left side 4 options in editor
+		polygon(5,MAXY-x,5,MAXY-y,45,MAXY-y,45,MAXY-x);             // Left side options in editor
 		x+=35;
 		y+=35;
 	}
