@@ -107,5 +107,6 @@ void drawColorPalette()
 		drawMinorColorBox(BOTTOM, i , 2 * i + 1);
 	}
 	drawOutlineOfColorBoxes();
+	glLineWidth(1);
 	glFlush();
 }

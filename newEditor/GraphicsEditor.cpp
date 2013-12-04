@@ -3,6 +3,7 @@
 
 #include "Boxes.h"
 #include "colorPalette.h"
+#include "menuBar.h"
 
 #define BRUSHSIZEINDEX 0
 #define LINESIZEINDEX 1
@@ -57,13 +58,11 @@ void drawLine(float x0, float y0, float x1, float y1)
 
 void writeText(char * text, int x, int y)
 {
-	glColor3f(1,1,1);
 	glRasterPos2i(x, y);
 	while(*text)
 	{
 		glutBitmapCharacter(GLUT_BITMAP_HELVETICA_18,*text++);
 	}
-	glColor3fv(colors[clr]);
 }
 
 /* 
@@ -163,10 +162,12 @@ void drawBorder()
 void displayCallback()
 {
 	glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
+	clr = 0;
 	drawBorder();
 	// writeText("Pencil", padding*3, 0.9*YMAX-20);
 	drawAllOptionBoxes();
 	drawColorPalette();
+	drawMenuBar();
 	glFlush();
 }
 
@@ -176,7 +177,7 @@ void init()
 	glMatrixMode(GL_PROJECTION);
 	glLoadIdentity();
 	glColor3f(0, 0, 0);
-	glOrtho(0, XMAX, 0, YMAX, -200, 200);
+	glOrtho(0, XMAX, 0, YMAX, 200, -200);
 	glMatrixMode(GL_MODELVIEW);
 	glLoadIdentity();
 	glEnable(GL_DEPTH_TEST);

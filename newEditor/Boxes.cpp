@@ -9,6 +9,16 @@ extern GLint optionHeight;
 
 void drawLeftOptionBox(int boxNumber)
 {
+	glColor3fv(colors[0]);
+	glLineWidth(2);
+	glBegin(GL_LINE_LOOP);
+	glVertex2f(padding, 0.9 * YMAX - (optionHeight + padding) * boxNumber);
+	glVertex2f(0.1 * XMAX - padding, 0.9 * YMAX - (optionHeight + padding) * boxNumber);
+	glVertex2f(0.1 * XMAX - padding, 0.9 * YMAX - optionHeight * (boxNumber + 1) - padding * boxNumber);
+	glVertex2f(padding, 0.9 * YMAX - optionHeight * (boxNumber + 1) - padding * boxNumber);
+	glEnd();
+	glLineWidth(1);
+
 	glColor3f(0.75, 0.75, 0.75);
 	glBegin(GL_POLYGON);
 	glVertex2f(padding, 0.9 * YMAX - (optionHeight + padding) * boxNumber);
@@ -21,6 +31,16 @@ void drawLeftOptionBox(int boxNumber)
 
 void drawRightOptionBox(int boxNumber)
 {
+	glColor3fv(colors[0]);
+	glLineWidth(2);
+	glBegin(GL_LINE_LOOP);
+	glVertex2f(0.1 * XMAX, 0.9 * YMAX - (optionHeight + padding) * boxNumber);
+	glVertex2f(0.2 * XMAX - padding, 0.9 * YMAX - (optionHeight + padding) * boxNumber);
+	glVertex2f(0.2 * XMAX - padding, 0.9 * YMAX - optionHeight * (boxNumber + 1) - padding * boxNumber);
+	glVertex2f(0.1 * XMAX, 0.9 * YMAX - optionHeight * (boxNumber + 1) - padding * boxNumber);
+	glEnd();
+	glLineWidth(1);
+
 	glColor3f(0.75, 0.75, 0.75);
 	glBegin(GL_POLYGON);
 	glVertex2f(0.1 * XMAX, 0.9 * YMAX - (optionHeight + padding) * boxNumber);
@@ -33,17 +53,12 @@ void drawRightOptionBox(int boxNumber)
 
 void drawAllOptionBoxes()
 {
-	drawLeftOptionBox(0);
-	drawLeftOptionBox(1);
-	drawLeftOptionBox(2);
-	drawLeftOptionBox(3);
-	drawLeftOptionBox(4);
-	drawLeftOptionBox(5);
+	int i;
+	for(i = 0; i < 8; i++)
+		drawLeftOptionBox(i);
 
-	drawRightOptionBox(0);
-	drawRightOptionBox(1);
-	drawRightOptionBox(2);
-	drawRightOptionBox(3);
-	drawRightOptionBox(4);
-	drawRightOptionBox(5);
+	for(i = 0; i < 8; i++)
+		drawRightOptionBox(i);
+	glLineWidth(1);
+	glFlush();
 }
