@@ -2,6 +2,25 @@
 #include<math.h>
 #include<stdlib.h>
 #include<GL/glut.h>
+#define PI 3.14159265
+
+GLubyte mypattern[] = {
+    0xAA, 0xAA, 0xAA, 0xAA, 0x00, 0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00, 0x00, 0xAA, 0xAA, 0xAA, 0xAA,
+    0xAA, 0xAA, 0xAA, 0xAA, 0x00, 0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00, 0x00, 0xAA, 0xAA, 0xAA, 0xAA,
+    0xAA, 0xAA, 0xAA, 0xAA, 0x00, 0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00, 0x00, 0xAA, 0xAA, 0xAA, 0xAA,
+    0xAA, 0xAA, 0xAA, 0xAA, 0x00, 0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00, 0x00, 0xAA, 0xAA, 0xAA, 0xAA,
+    0xAA, 0xAA, 0xAA, 0xAA, 0x00, 0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00, 0x00, 0xAA, 0xAA, 0xAA, 0xAA,
+    0xAA, 0xAA, 0xAA, 0xAA, 0x00, 0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00, 0x00, 0xAA, 0xAA, 0xAA, 0xAA,
+    0xAA, 0xAA, 0xAA, 0xAA, 0x00, 0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00, 0x00, 0xAA, 0xAA, 0xAA, 0xAA,
+    0xAA, 0xAA, 0xAA, 0xAA, 0x00, 0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00, 0x00, 0xAA, 0xAA, 0xAA, 0xAA};
 
 #define PENCIL 1
 #define BRUSH 2
@@ -30,18 +49,23 @@
 #define TRI 26
 #define REFLECTION 27
 #define ROTATION 28
+#define SPHERE 29
+#define PATTERN 30
+
 #define MAXX 1018
 #define MAXY 700
+#define MAXZ 500
 
 int linex=0,liney=0,elinex=0,eliney=0,clr=0,count=0;
 int drawline,drawrect,drawcircle,insideclip,outsideclip,translate,scaling,trans_paste,scale_paste,translate1,trans_paste1;
+int drawsphere;
 int rotate,rotate_paste;
 int reflection,reflection_paste;
 double m=1,c=0;
 int ax,ay,bx,by,px,py;
 int state1,size=20,ret,savec,openc;
 float arr[MAXX-50][MAXY-50][3],mat[MAXX-50][MAXY-40][3],clip[MAXX-50][MAXY-40][3],mat1[MAXX-50][MAXY-40][3], arr1[MAXX-50][MAXY-50][3];
-GLfloat colors[18][3]={{0.0,0.0,0.0},{1.0,0.0,0.0},{0.0,1.0,0.0},{0.0,0.0,1.0},{1.0,1.0,0.0},{1.0,0.0,1.0},{0.0,1.0,1.0},{1.0,1.0,1.0},{0.75,0.8,0.9},{0.6,0.2,0.7},{0.3,0.3,0.3},{0.1,0.55,0.1},{1.0,0.3,0.0},{0.5,0.4,1},{0.6,0.0,0.1},{0.5,0.2,0.1},{0.7,0.7,0.7},{0.0,1.0,0.0}};
+GLfloat colors[18][3]={{0.0,0.0,0.0},{1.0,0.0,0.0},{0.0,1.0,0.0},{0.0,0.0,1.0},{1.0,1.0,0.0},{1.0,0.0,1.0},{0.0,1.0,1.0},{1.0,1.0,1.0},{0.75,0.8,0.9},{0.6,0.2,0.7},{0.3,0.3,0.3},{0.1,0.55,0.1},{1.0,0.3,0.0},{0.5,0.4,1},{0.6,0.0,0.1},{0.5,0.2,0.1},{0.7,0.7,0.7},{0.84,0.97,1}};
 long matsize=(MAXX-50)*(MAXY-40)*3;
 FILE *fp;
 int screenwidth=MAXX,screenheight=MAXY;
@@ -57,6 +81,51 @@ void lineloop(int x1,int y1,int x2,int y2,int x3,int y3,int x4,int y4)
 	glEnd();
 	glFlush();
 }
+
+
+void manualDrawSphere(int h,int k,int r)
+{
+	float theta = 0, phi = 0, deltaTheta = PI / 9, deltaPhi = PI / 9;
+	float z1, x1, y1, z2, x2, y2, z3, x3, y3, z4, x4, y4;	
+	
+	glBegin(GL_QUAD_STRIP);
+
+	for(theta = 0; theta <= 2 * PI ; theta += deltaTheta)
+	{
+		for(phi = 0; phi <= PI; phi += deltaPhi)
+		{
+
+			z1 = r * sinf(phi + deltaPhi) * cosf(theta + deltaTheta);
+			x1 = r * sinf(phi + deltaPhi) * sinf(theta + deltaTheta);
+			y1 = r * cosf(phi + deltaPhi);
+
+			z2 = r * sinf(phi) * cosf(theta + deltaTheta);
+			x2 = r * sinf(phi) * sinf(theta + deltaTheta);
+			y2 = r * cosf(phi);
+
+			z3 = r * sinf(phi) * cosf(theta);
+			x3 = r * sinf(phi) * sinf(theta);
+			y3 = r * cosf(phi);
+
+			z4 = r * sinf(phi + deltaPhi) * cosf(theta);
+			x4 = r * sinf(phi + deltaPhi) * sinf(theta);
+			y4 = r * cosf(phi + deltaPhi);
+
+			glColor3f(cosf(phi), sinf(phi), sinf(phi));
+			glVertex3f(h+x4,k+y4, z4);
+			glColor3f(cosf(phi), sinf(phi), cosf(phi));
+			glVertex3f(h+x1,k+y1, z1);
+			glColor3f(cosf(theta), sinf(theta), sinf(theta));
+			glVertex3f(h+x2,k+y2, z2);
+			glColor3f(cosf(theta), sinf(theta), cosf(theta));
+			glVertex3f(h+x3,k+y3, z3);
+		}
+	}
+	glEnd();
+
+	return;
+}
+
 
 void polygon(int x1,int y1,int x2,int y2,int x3,int y3,int x4,int y4)
 {
@@ -327,6 +396,9 @@ void disp()
 	fill_tri();
 	tri();
 	draw_text("Graphics Package",625,10);
+	draw_text("Sphere",978,MAXY-(40+402));
+	draw_text("Pattern",980,230);
+	draw_text("Fill",990,220);
 	glColor3fv(colors[3]);
 	draw_text("Inside",12,438);
 	draw_text("Clip",15,428);
@@ -516,7 +588,8 @@ void mouse(int button,int state,int x,int y)
 			boxes1(355,380,colors[7]);
 			boxes1(320,345,colors[7]);
 			boxes1(285,310,colors[7]);
-			boxes1(250,275,colors[7]);
+			boxes(250,275,colors[7]);
+			boxes(250-35,275-35,colors[7]);
 			glColor3f(0,0,0);
 			draw_text("PENCIL - used for free hand drawing",625,30);
 			disp();
@@ -540,7 +613,8 @@ void mouse(int button,int state,int x,int y)
 			boxes1(355,380,colors[7]);
 			boxes1(320,345,colors[7]);
 			boxes1(285,310,colors[7]);
-			boxes1(250,275,colors[7]);
+			boxes(250,275,colors[7]);
+			boxes(250-35,275-35,colors[7]);
 			glColor3f(0,0,0);
 			draw_text("BRUSH - used for free hand drawing with size larger than pencil",625,30);
 			disp();
@@ -564,7 +638,8 @@ void mouse(int button,int state,int x,int y)
 			boxes1(355,380,colors[7]);
 			boxes1(320,345,colors[7]);
 			boxes1(285,310,colors[7]);
-			boxes1(250,275,colors[7]);
+			boxes(250,275,colors[7]);
+			boxes(250-35,275-35,colors[7]);
 			glColor3f(0,0,0);
 			draw_text("LINE - used to draw a line of any length between two desired points",625,30);
 			disp();
@@ -589,7 +664,8 @@ void mouse(int button,int state,int x,int y)
 			boxes1(355,380,colors[7]);
 			boxes1(320,345,colors[7]);
 			boxes1(285,310,colors[7]);
-			boxes1(250,275,colors[7]);
+			boxes(250,275,colors[7]);
+			boxes(250-35,275-35,colors[7]);
 			glColor3f(0,0,0);
 			draw_text("RECTANGLE - used to draw empty rectangle of desired size",625,30);
 			disp();
@@ -614,7 +690,8 @@ void mouse(int button,int state,int x,int y)
 			boxes1(355,380,colors[7]);
 			boxes1(320,345,colors[7]);
 			boxes1(285,310,colors[7]);
-			boxes1(250,275,colors[7]);
+			boxes(250,275,colors[7]);
+			boxes(250-35,275-35,colors[7]);
 			glColor3f(0,0,0);
 			draw_text("FILLED RECTANGLE - used to draw rectangle filled with selected color ",625,30);
 			disp();
@@ -639,7 +716,8 @@ void mouse(int button,int state,int x,int y)
 			boxes1(355,380,colors[7]);
 			boxes1(320,345,colors[7]);
 			boxes1(285,310,colors[7]);
-			boxes1(250,275,colors[7]);
+			boxes(250,275,colors[7]);
+			boxes(250-35,275-35,colors[7]);
 			glColor3f(0,0,0);
 			draw_text("SPRAY - press + to increase size , press - to decrease size",625,30);
 			disp();
@@ -664,7 +742,8 @@ void mouse(int button,int state,int x,int y)
 			boxes1(355,380,colors[7]);
 			boxes1(320,345,colors[7]);
 			boxes1(285,310,colors[7]);
-			boxes1(250,275,colors[7]);
+			boxes(250,275,colors[7]);
+			boxes(250-35,275-35,colors[7]);
 			glColor3f(0,0,0);
 			draw_text("CIRCLE - used to draw circle of desired radius",625,30);
 			disp();
@@ -699,7 +778,8 @@ void mouse(int button,int state,int x,int y)
 			boxes1(355,380,colors[7]);
 			boxes1(320,345,colors[7]);
 			boxes1(285,310,colors[7]);
-			boxes1(250,275,colors[7]);
+			boxes(250,275,colors[7]);
+			boxes(250-35,275-35,colors[7]);
 			glColor3f(0,0,0);
 			draw_text("ERAZER - used to eraze parts of drawing",625,30);
 			disp();
@@ -725,6 +805,8 @@ void mouse(int button,int state,int x,int y)
 			
 			boxes(320,345,colors[7]);
 			boxes(285,310,colors[7]);
+			boxes(250,275,colors[7]);
+			boxes(250-35,275-35,colors[7]);
 			glColor3f(1,0.7,0.8);
 			//polygon(970+20,365,970+20,370,970+30,370,970+30,365);
 			polygon(970+15,360-35,970+15,375-35,970+35,375-35,970+35,360-35);
@@ -759,6 +841,8 @@ void mouse(int button,int state,int x,int y)
 			boxes(355,380,colors[7]);
 		
 			boxes(285,310,colors[7]);
+			boxes(250,275,colors[7]);
+			boxes(250-35,275-35,colors[7]);
 			glColor3f(1,0.7,0.8);
 			polygon(970+20,365,970+20,370,970+30,370,970+30,365);
 			//polygon(970+15,360-35,970+15,375-35,970+35,375-35,970+35,360-35);
@@ -795,7 +879,9 @@ void mouse(int button,int state,int x,int y)
 			polygon(970+20,365,970+20,370,970+30,370,970+30,365);
 			polygon(970+15,360-35,970+15,375-35,970+35,375-35,970+35,360-35);
 			//polygon(970+10,355-70,970+10,380-70,970+40,380-70,970+40,355-70);
-
+			
+			boxes(250,275,colors[7]);
+			boxes(250-35,275-35,colors[7]);
 			//boxes(355,380,colors[7]);
 			//boxes(320,345,colors[7]);
 			//boxes(285,310,colors[7]);
@@ -807,6 +893,61 @@ void mouse(int button,int state,int x,int y)
 			state1=ERAZE3;
 			return;
 		}
+
+				i+=35;j+=35;
+		if(inside_area(970+5,970+45,MAXY-i,MAXY-j,x,y))
+		{
+			glColor3fv(colors[17]);
+			polygon(620,20,620,45,MAXX-5,45,MAXX-5,20);
+			
+			boxes(635,660,colors[7]);
+			boxes(600,625,colors[7]);
+		    boxes(565,590,colors[7]);
+			boxes(530,555,colors[7]);
+			boxes(495,520,colors[7]);
+			boxes(460,485,colors[7]);
+			boxes(425,450,colors[7]);
+			boxes(390,415,colors[7]);
+			boxes1(355,380,colors[7]);
+			boxes1(320,345,colors[7]);
+			boxes1(285,310,colors[7]);
+			boxes2(250,275,colors[8]);
+			boxes(250-35,275-35,colors[7]);
+			glColor3f(0,0,0);
+			draw_text("SPHERE - used to draw a sphere",625,30);
+			disp();
+			glFlush();
+			state1=SPHERE;
+			return;
+		}
+
+		i+=35;j+=35;
+		if(inside_area(970+5,970+45,MAXY-i,MAXY-j,x,y))
+		{
+
+            glColor3fv(colors[17]);
+			polygon(970,280,970,385,970+45,385,970+45,280);
+			polygon(620,20,620,45,MAXX-5,45,MAXX-5,20);
+			boxes(635,660,colors[7]);
+			boxes(600,625,colors[7]);
+		    boxes(565,590,colors[7]);
+			boxes(530,555,colors[7]);
+			boxes(495,520,colors[7]);
+			boxes(460,485,colors[7]);
+			boxes(390,415,colors[7]);
+			boxes(390,415,colors[7]);
+			boxes1(355,380,colors[7]);
+			boxes1(320,345,colors[7]);
+			boxes1(285,310,colors[7]);
+			boxes2(250-35,275-35,colors[8]);
+            boxes(250,275,colors[7]);
+			glColor3f(0,0,0);
+			draw_text("PATTERN FILLED RECTANGLE - used to draw rectangle filled with pattern ",625,30);
+			disp();
+			glFlush();
+			state1=PATTERN;return;
+		}
+
         ii+=35;jj+=35;
 		if(inside_area(5,45,MAXY-ii,MAXY-jj,x,y))
 		{
@@ -827,8 +968,8 @@ void mouse(int button,int state,int x,int y)
 			boxes1(355,380,colors[7]);
 			boxes1(320,345,colors[7]);
 			boxes1(285,310,colors[7]);
-			boxes1(250,275,colors[7]);
-			boxes1(215,240,colors[7]);
+			boxes(250,275,colors[7]);
+			boxes(215,240,colors[7]);
 			boxes1(180,205,colors[7]);
 			boxes1(145,170,colors[7]);
 			glColor3f(0,0,0);
@@ -858,8 +999,8 @@ void mouse(int button,int state,int x,int y)
 			boxes1(355,380,colors[7]);
 			boxes1(320,345,colors[7]);
 			boxes1(285,310,colors[7]);
-			boxes1(250,275,colors[7]);
-			boxes1(215,240,colors[7]);
+			boxes(250,275,colors[7]);
+			boxes(215,240,colors[7]);
 			boxes1(180,205,colors[7]);
 			boxes1(145,170,colors[7]);
 			glColor3f(0,0,0);
@@ -888,8 +1029,8 @@ void mouse(int button,int state,int x,int y)
 			boxes1(390,415,colors[7]);
 			boxes3(355,380,colors[8]);
 			boxes1(320,345,colors[7]);
-			boxes1(285,310,colors[7]);
-			boxes1(250,275,colors[7]);
+			boxes(285,310,colors[7]);
+			boxes(250,275,colors[7]);
 			boxes1(215,240,colors[7]);
 			boxes3(180,205,colors[7]);
 			boxes1(145,170,colors[7]);
@@ -920,8 +1061,8 @@ void mouse(int button,int state,int x,int y)
 			boxes1(355,380,colors[7]);
 			boxes3(320,345,colors[8]);
 			boxes1(285,310,colors[7]);
-			boxes1(250,275,colors[7]);
-			boxes1(215,240,colors[7]);
+			boxes(250,275,colors[7]);
+			boxes(215,240,colors[7]);
 			boxes1(180,205,colors[7]);
 			boxes1(145,170,colors[7]);
 			glColor3f(0,0,0);
@@ -952,8 +1093,8 @@ void mouse(int button,int state,int x,int y)
 			boxes1(355,380,colors[7]);
 			boxes1(320,345,colors[7]);
 			boxes3(285,310,colors[8]);
-			boxes1(250,275,colors[7]);
-			boxes1(215,240,colors[7]);
+			boxes(250,275,colors[7]);
+			boxes(215,240,colors[7]);
 			boxes1(180,205,colors[7]);
 			boxes1(145,170,colors[7]);
 			glColor3f(0,0,0);
@@ -1526,6 +1667,25 @@ void mouse(int button,int state,int x,int y)
 			eliney=0;
 			drawrect=0;
 		}
+		if(drawsphere)
+		{
+			double r=sqrt(pow((double)(elinex-linex),2)+(pow((double)(eliney-liney),2)));
+			if((linex-r)<50)
+				r=linex-50;
+			if((liney-r)<50)
+				r=liney-50;
+			if((linex+r)>(MAXX-51))
+				r=MAXX-51-linex;
+			if((liney+r)>(MAXY-41))
+				r=MAXY-41-liney;
+			manualDrawSphere(linex,liney,r);
+			glFlush();
+			linex=0;
+			liney=0;
+			elinex=0;
+			eliney=0;
+			drawsphere=0;	
+		}
 		if(drawcircle)
 		{
 			double r=sqrt(pow((double)(elinex-linex),2)+(pow((double)(eliney-liney),2)));
@@ -1714,6 +1874,68 @@ void mymove(int mx,int my)
 				lineloop(linex,liney,linex-1,eliney,elinex,eliney,elinex,liney);
 				glColor3fv(colors[0]);
 			}						
+		}
+	}
+			if(state1==SPHERE)
+		{
+			if(x<MAXX-49 && x>49 && y>49 && y<MAXY-39)
+			{
+				if(!linex && !liney)
+				{
+					glReadPixels(50,50,MAXX-50,MAXY-50,GL_RGB,GL_FLOAT,arr);
+					linex=x;
+					liney=y;
+				}	
+				else
+				{
+					drawsphere=1;
+					elinex=x;
+					eliney=y;
+					glRasterPos2i(50,50);
+					glDrawPixels(MAXX-50,MAXY-50,GL_RGB,GL_FLOAT,arr);
+					double r=sqrt(pow((double)(elinex-linex),2)+(pow((double)(eliney-liney),2)));
+					if((linex-r)<50)
+						r=linex-50;
+					if((liney-r)<50)
+						r=liney-50;
+					if((linex+r)>(MAXX-51))
+						r=MAXX-51-linex;
+					if((liney+r)>(MAXY-41))
+						r=MAXY-41-liney;
+					manualDrawSphere(linex,liney,r);				
+					glFlush();			
+				}
+			}
+		}
+
+			if(state1==PATTERN)
+	{
+		if(x<MAXX-49 && x>49 && y>50 && y<MAXY-39)
+		{
+			if(!linex && !liney)
+			{
+				glReadPixels(50,50,MAXX-50,MAXY-50,GL_RGB,GL_FLOAT,arr);
+				linex=x;
+				liney=y;
+			}
+			else
+			{
+				drawrect=1;
+                elinex=x;
+				eliney=y;
+				glRasterPos2i(50,50);
+				glDrawPixels(MAXX-50,MAXY-50,GL_RGB,GL_FLOAT,arr);
+                glEnable(GL_POLYGON_STIPPLE);          	
+                glPolygonStipple(mypattern);              	
+				glBegin(GL_POLYGON);
+				glVertex2i(linex,liney);
+				glVertex2i(linex,eliney);
+				glVertex2i(elinex,eliney);
+				glVertex2i(elinex,liney);
+				glEnd();
+                glDisable(GL_POLYGON_STIPPLE);  
+     			glFlush();
+			}
 		}
 	}
 	if(state1==BRUSH)
@@ -2014,13 +2236,20 @@ void display()
 	line(425,5,425,25);
 	line(450,5,450,25);
 	glColor3fv(colors[7]);
-	int x=40,y=65,i;
+	int x=40,y=65,x2,y2,i;
 	for(i=0;i<8;i++)
 	{                                                                    
 		polygon(970+5,MAXY-x,970+5,MAXY-y,970+45,MAXY-y,970+45,MAXY-x);    // Right side 8 options in editor
 		x+=35;
 		y+=35;
 	}
+	    x2 = x+35+35+35+35;
+    y2=y+35+35+35+35;
+
+	polygon(970+5,MAXY-(40+385),970+5,MAXY-(65+385),970+45,MAXY-(65+385),970+45,MAXY-(40+385));	
+	polygon(970+5,MAXY-x2,970+5,MAXY-y2,970+45,MAXY-y2,970+45,MAXY-x2);
+
+
 	x-=70;
 	y-=70;
 	for(i=0;i<9;i++)
@@ -2064,9 +2293,18 @@ void myReshape(int nw,int nh)
 	glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
 	glMatrixMode(GL_PROJECTION);
 	glLoadIdentity();
-	gluOrtho2D(0.0,nw,0.0,nh);
+	glOrtho(0.0,nw,0.0,nh,0,MAXZ);
 	glColor3f(1.0,1.0,1.0);
 }
+
+void minit()
+		{		
+			glClearColor(1,1,1,1);
+			glMatrixMode(GL_PROJECTION);
+			glLoadIdentity();
+			glOrtho(0.0,MAXX,0.0,MAXY,0.0,MAXZ);
+			glColor3f(0.0,0.0,0.0);
+		}
 
 
 void main(int argc,char **argv)
@@ -2075,7 +2313,8 @@ void main(int argc,char **argv)
 	glutInitDisplayMode(GLUT_SINGLE|GLUT_RGB);
 	glutInitWindowSize(MAXX,MAXY);
 	glutInitWindowPosition(0,0);
-	glutCreateWindow("Graphics Editor");	
+	glutCreateWindow("Graphics Editor - OpenGL");	
+	minit();
 	glutReshapeFunc(myReshape);
 	glutDisplayFunc(display);
 	glutMouseFunc(mouse);
