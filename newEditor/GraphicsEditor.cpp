@@ -1,7 +1,8 @@
 #include<stdio.h>
 #include<GL/glut.h>
 
-#include "Boxes.cpp"
+#include "Boxes.h"
+#include "colorPalette.h"
 
 #define BRUSHSIZEINDEX 0
 #define LINESIZEINDEX 1
@@ -11,7 +12,26 @@ GLint YMAX = 700;
 int size[2] = {1, 1};
 GLboolean sizeIndex = 0;
 
-GLfloat colors[18][3]={{0.0,0.0,0.0},{1.0,0.0,0.0},{0.0,1.0,0.0},{0.0,0.0,1.0},{1.0,1.0,0.0},{1.0,0.0,1.0},{0.0,1.0,1.0},{1.0,1.0,1.0},{0.75,0.8,0.9},{0.6,0.2,0.7},{0.3,0.3,0.3},{0.1,0.55,0.1},{1.0,0.3,0.0},{0.5,0.4,1},{0.6,0.0,0.1},{0.5,0.2,0.1},{0.7,0.7,0.7},{0.84,0.97,1}};
+GLfloat colors[20][3]={	{0.0,0.0,0.0},		// Black
+						{1.0,1.0,1.0},		// White
+						{0.2,0.2,0.2},		// Dark Gray
+						{0.7,0.7,0.7},		// Gray
+						{0.5,0.0,0.0},		// Maroon
+						{0.6,0.2,0.0},		// Brown
+						{1.0,0.0,0.0},		// Red
+						{1.0,0.6,0.8},		// Pink
+						{1.0,0.26,0.0},		// Orange
+						{1.0,0.6,0.0},		// Mustard
+						{1.0,1.0,0.0},		// Yellow
+						{1.0,1.0,0.8},		// OffWhite
+						{0.0,0.6,0.2},		// Dark Green
+						{0.6,1.0,0.2},		// Lime
+						{0.0,0.6,1.0},		// Blue
+						{0.4,1.0,1.0},		// Aqua
+						{0.0,0.0,1.0},		// Dark Blue
+						{0.4,0.6,0.6},		// Steel Blue
+						{0.4,0.0,0.4},		// Purple
+						{0.8,0.6,1.0} }; 	// Mauve
 GLint clr = 0;
 GLint padding = 5;
 GLint optionHeight = 30;
@@ -129,7 +149,7 @@ void drawBorder()
 {
 	// Draws the border around the canvas
 
-	glClearColor(0.5, 0.5, 0.5, 1);
+	glClearColor(0.15, 0.4375, 0.68, 1);
 	glColor3f(1,1,1);
 	glBegin(GL_POLYGON);
 	glVertex2f(0 + XMAX/10.0, 0 + YMAX/10.0);
@@ -144,8 +164,9 @@ void displayCallback()
 {
 	glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
 	drawBorder();
-	writeText("Pencil", padding*3, 0.9*YMAX-20);
+	// writeText("Pencil", padding*3, 0.9*YMAX-20);
 	drawAllOptionBoxes();
+	drawColorPalette();
 	glFlush();
 }
 

@@ -2,14 +2,14 @@
 
 extern GLint XMAX;
 extern GLint YMAX;
-extern GLfloat colors[18][3];
+extern GLfloat colors[][3];
 extern GLint clr;
 extern GLint padding;
 extern GLint optionHeight;
 
 void drawLeftOptionBox(int boxNumber)
 {
-	glColor3f(0.3, 0.3, 0.3);
+	glColor3f(0.75, 0.75, 0.75);
 	glBegin(GL_POLYGON);
 	glVertex2f(padding, 0.9 * YMAX - (optionHeight + padding) * boxNumber);
 	glVertex2f(0.1 * XMAX - padding, 0.9 * YMAX - (optionHeight + padding) * boxNumber);
@@ -21,7 +21,7 @@ void drawLeftOptionBox(int boxNumber)
 
 void drawRightOptionBox(int boxNumber)
 {
-	glColor3f(0.3, 0.3, 0.3);
+	glColor3f(0.75, 0.75, 0.75);
 	glBegin(GL_POLYGON);
 	glVertex2f(0.9 * XMAX + padding, 0.9 * YMAX - (optionHeight + padding) * boxNumber);
 	glVertex2f(XMAX - padding, 0.9 * YMAX - (optionHeight + padding) * boxNumber);
@@ -41,4 +41,9 @@ void drawAllOptionBoxes()
 	drawLeftOptionBox(5);
 
 	drawRightOptionBox(0);
+	drawRightOptionBox(1);
+	drawRightOptionBox(2);
+	drawRightOptionBox(3);
+	drawRightOptionBox(4);
+	drawRightOptionBox(5);
 }
