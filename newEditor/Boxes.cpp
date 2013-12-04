@@ -23,10 +23,10 @@ void drawRightOptionBox(int boxNumber)
 {
 	glColor3f(0.75, 0.75, 0.75);
 	glBegin(GL_POLYGON);
-	glVertex2f(0.9 * XMAX + padding, 0.9 * YMAX - (optionHeight + padding) * boxNumber);
-	glVertex2f(XMAX - padding, 0.9 * YMAX - (optionHeight + padding) * boxNumber);
-	glVertex2f(XMAX - padding, 0.9 * YMAX - optionHeight * (boxNumber + 1) - padding * boxNumber);
-	glVertex2f(0.9 * XMAX + padding, 0.9 * YMAX - optionHeight * (boxNumber + 1) - padding * boxNumber);
+	glVertex2f(0.1 * XMAX, 0.9 * YMAX - (optionHeight + padding) * boxNumber);
+	glVertex2f(0.2 * XMAX - padding, 0.9 * YMAX - (optionHeight + padding) * boxNumber);
+	glVertex2f(0.2 * XMAX - padding, 0.9 * YMAX - optionHeight * (boxNumber + 1) - padding * boxNumber);
+	glVertex2f(0.1 * XMAX, 0.9 * YMAX - optionHeight * (boxNumber + 1) - padding * boxNumber);
 	glEnd();
 	glColor3fv(colors[clr]);
 }

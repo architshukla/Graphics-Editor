@@ -152,10 +152,10 @@ void drawBorder()
 	glClearColor(0.15, 0.4375, 0.68, 1);
 	glColor3f(1,1,1);
 	glBegin(GL_POLYGON);
-	glVertex2f(0 + XMAX/10.0, 0 + YMAX/10.0);
-	glVertex2f(XMAX - XMAX/10.0, 0 + YMAX/10.0);
-	glVertex2f(XMAX - XMAX/10.0, YMAX - YMAX/10.0);
-	glVertex2f(0 + XMAX/10.0, YMAX - YMAX/10.0);
+	glVertex2f(0.2 * XMAX, 0 + YMAX/10.0);
+	glVertex2f(0.95 * XMAX, 0 + YMAX/10.0);
+	glVertex2f(0.95 * XMAX, YMAX - YMAX/10.0);
+	glVertex2f(0.2 * XMAX, YMAX - YMAX/10.0);
 	glEnd();
 	glColor3fv(colors[clr]);
 }
