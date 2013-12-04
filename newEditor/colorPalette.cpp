@@ -26,6 +26,17 @@ void drawMajorColorBox(int colorIndex)
 	glVertex2f(0.1 * dimension - padding, 0.1 * dimension - padding);
 	glVertex2f(0.1 * dimension - padding, padding);
 	glEnd();
+
+	glLineWidth(3);
+	glColor3fv(colors[0]);
+	glBegin(GL_LINE_LOOP);
+	glVertex2f(padding, padding);
+	glVertex2f(padding, 0.1 * dimension - padding);
+	glVertex2f(0.1 * dimension - padding, 0.1 * dimension - padding);
+	glVertex2f(0.1 * dimension - padding, padding);
+	glEnd();
+	glLineWidth(1);
+
 	glColor3fv(colors[clr]);
 }
 
