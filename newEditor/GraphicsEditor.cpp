@@ -1,5 +1,7 @@
 #include<stdio.h>
 #include<math.h>
+#include<stdlib.h>
+#include<time.h>
 #include<GL/glut.h>
 
 #include "Boxes.h"
@@ -35,6 +37,7 @@
 #define OUTERCLIP 306
 #define SCALE 307
 #define ROTATE 308
+#define FLOODFILL 309
 
 GLint XMAX = 1018;
 GLint YMAX = 700;
@@ -71,8 +74,17 @@ GLint clr = 0;
 GLint padding = 5;
 GLint optionHeight = 30;
 GLint operation;
+GLint oldx, oldy;
 
 extern int numberOfColorColumns, numberOfMenuItems, numberOfLeftOptionItems, numberOfRightOptionItems;
+
+int inside_area(float left, float right, float bottom, float top, float x, float y)
+{
+	if(x>left && x<right)
+		if(y<top && y>bottom)
+			return 1;
+	return 0;
+}
 
 /*
 	Drawing primitives
@@ -91,6 +103,125 @@ void drawLine(float x0, float y0, float x1, float y1)
 	glVertex2f(x0, y0);
 	glVertex2f(x1, y1);
 	glEnd();
+	glFlush();
+}
+
+void drawTriangle(int topx, int topy, int lowerx, int lowery)
+{
+	glBegin(GL_LINE_LOOP);
+	glVertex2f(topx, topy);
+	glVertex2f(lowerx, lowery);
+	glVertex2f(topx, lowery);
+	glEnd();
+	glFlush();
+}
+
+void drawFilledTriangle(int topx, int topy, int lowerx, int lowery)
+{
+	glBegin(GL_POLYGON);
+	glVertex2f(topx, topy);
+	glVertex2f(lowerx, lowery);
+	glVertex2f(topx, lowery);
+	glEnd();
+	glFlush();
+}
+
+void drawRectangle(int minx, int miny, int maxx, int maxy)
+{
+	glBegin(GL_LINE_LOOP);
+	glVertex2f(minx, miny);
+	glVertex2f(minx, maxy);
+	glVertex2f(maxx, maxy);
+	glVertex2f(maxx, miny);
+	glEnd();
+	glFlush();
+}
+
+void drawFilledRectangle(int minx, int miny, int maxx, int maxy)
+{
+	glBegin(GL_POLYGON);
+	glVertex2f(minx, miny);
+	glVertex2f(minx, maxy);
+	glVertex2f(maxx, maxy);
+	glVertex2f(maxx, miny);
+	glEnd();
+	glFlush();
+}
+
+void pencilStroke(int x, int y)
+{
+	if(inside_area(canvasXMIN, canvasXMAX, canvasYMIN, canvasYMAX, x - size[BRUSHSIZEINDEX], y - size[BRUSHSIZEINDEX]))
+		if(inside_area(canvasXMIN, canvasXMAX, canvasYMIN, canvasYMAX, x + size[BRUSHSIZEINDEX], y + size[BRUSHSIZEINDEX]))
+		{
+			glBegin(GL_POLYGON);
+			glVertex2f(x + size[BRUSHSIZEINDEX], y);
+			glVertex2f(x, y + size[BRUSHSIZEINDEX]);
+			glVertex2f(x - size[BRUSHSIZEINDEX], y);
+			glVertex2f(x, y - size[BRUSHSIZEINDEX]);
+			glEnd();
+		}
+}
+
+void brushStroke(int x, int y)
+{
+	int sizeOfBrush = size[BRUSHSIZEINDEX];
+	size[BRUSHSIZEINDEX]+=4;
+	size[BRUSHSIZEINDEX] = sizeOfBrush>10?10:size[BRUSHSIZEINDEX];
+
+	if(inside_area(canvasXMIN, canvasXMAX, canvasYMIN, canvasYMAX, x - size[BRUSHSIZEINDEX], y - size[BRUSHSIZEINDEX]))
+		if(inside_area(canvasXMIN, canvasXMAX, canvasYMIN, canvasYMAX, x + size[BRUSHSIZEINDEX], y + size[BRUSHSIZEINDEX]))
+		{
+			glBegin(GL_POLYGON);
+			glVertex2f(x + size[BRUSHSIZEINDEX], y + size[BRUSHSIZEINDEX]);
+			glVertex2f(x + size[BRUSHSIZEINDEX], y - size[BRUSHSIZEINDEX]);
+			glVertex2f(x - size[BRUSHSIZEINDEX], y - size[BRUSHSIZEINDEX]);
+			glVertex2f(x - size[BRUSHSIZEINDEX], y + size[BRUSHSIZEINDEX]);
+			glEnd();
+		}
+	size[BRUSHSIZEINDEX] = sizeOfBrush;
+}
+
+void sprayStroke(int x, int y)
+{
+	if(inside_area(canvasXMIN, canvasXMAX, canvasYMIN, canvasYMAX, x - size[BRUSHSIZEINDEX], y - size[BRUSHSIZEINDEX]))
+		if(inside_area(canvasXMIN, canvasXMAX, canvasYMIN, canvasYMAX, x + size[BRUSHSIZEINDEX], y + size[BRUSHSIZEINDEX]))
+		{
+			glPointSize(1);
+			glBegin(GL_POINTS);
+			int i;
+			float minx = x - 3 * size[BRUSHSIZEINDEX];
+			float miny = y - 3 * size[BRUSHSIZEINDEX];
+			float maxx = x + 3 * size[BRUSHSIZEINDEX];
+			float maxy = y + 3 * size[BRUSHSIZEINDEX];
+
+			for(i=0;i < 40 * size[BRUSHSIZEINDEX];i++)
+			{
+				glVertex2f((float)rand()/RAND_MAX*(maxx- minx) + minx, (float)rand()/RAND_MAX*(maxy - miny) + miny);
+			}
+			glEnd();
+			glPointSize(size[BRUSHSIZEINDEX]);
+		}
+}
+
+void erazerStroke(int x, int y)
+{
+	int sizeOfBrush = size[BRUSHSIZEINDEX];
+	size[BRUSHSIZEINDEX]+=4;
+	size[BRUSHSIZEINDEX] = sizeOfBrush>10?10:size[BRUSHSIZEINDEX];
+
+	if(inside_area(canvasXMIN, canvasXMAX, canvasYMIN, canvasYMAX, x - size[BRUSHSIZEINDEX], y - size[BRUSHSIZEINDEX]))
+		if(inside_area(canvasXMIN, canvasXMAX, canvasYMIN, canvasYMAX, x + size[BRUSHSIZEINDEX], y + size[BRUSHSIZEINDEX]))
+		{
+			glColor3fv(colors[1]);
+			glBegin(GL_POLYGON);
+			glVertex2f(x + size[BRUSHSIZEINDEX], y + size[BRUSHSIZEINDEX]);
+			glVertex2f(x + size[BRUSHSIZEINDEX], y - size[BRUSHSIZEINDEX]);
+			glVertex2f(x - size[BRUSHSIZEINDEX], y - size[BRUSHSIZEINDEX]);
+			glVertex2f(x - size[BRUSHSIZEINDEX], y + size[BRUSHSIZEINDEX]);
+			glEnd();
+			glColor3fv(colors[clr]);
+		}
+	size[BRUSHSIZEINDEX] = sizeOfBrush;
 }
 
 /*
@@ -313,14 +444,6 @@ void keyboardCallback(unsigned char key, int x, int y)
 	}
 }
 
-int inside_area(float left, float right, float bottom, float top, float x, float y)
-{
-	if(x>left && x<right)
-		if(y<top && y>bottom)
-			return 1;
-	return 0;
-}
-
 void handleColorSelection(int x, int y)
 {
 	float dimension;
@@ -383,35 +506,40 @@ void handleLeftOptions(int x, int y)
 		if(inside_area(padding, 0.1 * XMAX - padding, 0.9 * YMAX - optionHeight * (i + 1) - padding * i, 0.9 * YMAX - (optionHeight + padding) * i, x, y))
 		{
 			option = i;
+			drawAllOptionBoxes();
+			drawMenuBar();
+			highLightLeftOptionBox(i);
+			labelLeftOptionBoxes();
 			break;
 		}
 	}
 	if(option == -1)
 		return;
 	option += 200;
-	switch(option)
-	{
-		case PENCIL: printf("At PENCIL\n");
-			break;
-		case BRUSH: printf("At BRUSH\n");
-			break;
-		case SPRAY: printf("At SPRAY\n");
-			break;
-		case ERAZER: printf("At ERAZER\n");
-			break;
-		case LINE: printf("At LINE\n");
-			break;
-		case RECTANGLE: printf("At RECTANGLE\n");
-			break;
-		case FILLEDRECTANGLE: printf("At FILLED RECTANGLE\n");
-			break;
-		case CIRCLE: printf("At CIRCLE\n");
-			break;
-		case TRIANGLE: printf("At TRIANGLE\n");
-			break;
-		case FILLEDTRIANGLE: printf("At FILLED TRIANGLE\n");
-			break;
-	}
+	operation = option;
+	// switch(option)
+	// {
+	// 	case PENCIL: printf("At PENCIL\n");
+	// 		break;
+	// 	case BRUSH: printf("At BRUSH\n");
+	// 		break;
+	// 	case SPRAY: printf("At SPRAY\n");
+	// 		break;
+	// 	case ERAZER: printf("At ERAZER\n");
+	// 		break;
+	// 	case LINE: printf("At LINE\n");
+	// 		break;
+	// 	case RECTANGLE: printf("At RECTANGLE\n");
+	// 		break;
+	// 	case FILLEDRECTANGLE: printf("At FILLED RECTANGLE\n");
+	// 		break;
+	// 	case CIRCLE: printf("At CIRCLE\n");
+	// 		break;
+	// 	case TRIANGLE: printf("At TRIANGLE\n");
+	// 		break;
+	// 	case FILLEDTRIANGLE: printf("At FILLED TRIANGLE\n");
+	// 		break;
+	// }
 }
 
 void handleRightOptions(int x, int y)
@@ -422,37 +550,65 @@ void handleRightOptions(int x, int y)
 		if(inside_area(0.1 * XMAX, 0.2 * XMAX - padding, 0.9 * YMAX - optionHeight * (i + 1) - padding * i, 0.9 * YMAX - (optionHeight + padding) * i, x, y))
 		{
 			option = i;
+			drawAllOptionBoxes();
+			drawMenuBar();
+			highLightRightOptionBox(i);
+			labelRightOptionBoxes();
 			break;
 		}
 	}
 	if(option == -1)
 		return;
 	option += 300;
-	switch(option)
-	{
-		case SPIRAL: printf("At SPIRAL\n");
-			operation = option;		
-			break;
-		case LIMACON: printf("At LIMACON\n");
-			operation = option;
-			break;
-		case CARDIOD: printf("At CARDIOD\n");
-			operation = option;
-			break;
-		case THREELEAF: printf("At THREELEAF\n");
-			operation = option;
-			break;
-		case SPHERE: printf("At SPHERE\n");
-			break;
-		case INNERCLIP: printf("At INNERCLIP\n");
-			break;
-		case OUTERCLIP: printf("At OUTERCLIP\n");
-			break;
-		case SCALE: printf("At SCALE:\n");
-			break;
-		case ROTATE: printf("At ROTATE\n");
-			break;
-	}
+	operation = option;
+	// switch(option)
+	// {
+	// 	case SPIRAL: printf("At SPIRAL\n");
+	// 		operation = option;		
+	// 		break;
+	// 	case LIMACON: printf("At LIMACON\n");
+	// 		operation = option;
+	// 		break;
+	// 	case CARDIOD: printf("At CARDIOD\n");
+	// 		operation = option;
+	// 		break;
+	// 	case THREELEAF: printf("At THREELEAF\n");
+	// 		operation = option;
+	// 		break;
+	// 	case SPHERE: printf("At SPHERE\n");
+	// 		break;
+	// 	case INNERCLIP: printf("At INNERCLIP\n");
+	// 		break;
+	// 	case OUTERCLIP: printf("At OUTERCLIP\n");
+	// 		break;
+	// 	case SCALE: printf("At SCALE:\n");
+	// 		break;
+	// 	case ROTATE: printf("At ROTATE\n");
+	// 		break;
+	// 	case FLOODFILL: printf("At FLOODFILL\n");
+	// 		operation = option;
+	// 		break;
+	// }
+}
+
+void floodfill(float pointx,float pointy,float f[3],float o[3])
+{
+    float intensity,pixels[3];
+	if(pointx < canvasXMIN || pointx > canvasXMAX || pointy < canvasYMIN || pointy > canvasYMAX)
+		return;
+    glReadPixels(pointx,pointy,1.0,1.0,GL_RGB,GL_FLOAT,pixels);
+    if(pixels[0]==o[0] && (pixels[1])==o[1] && (pixels[2])==o[2])
+    {
+        glBegin(GL_POINTS);
+        glColor3fv(f);
+        glVertex2i(pointx,pointy);
+        glEnd();
+        glFlush();
+        floodfill(pointx+1,pointy,f,o);
+        floodfill(pointx,pointy+1,f,o);
+        floodfill(pointx-1,pointy,f,o);
+        floodfill(pointx,pointy-1,f,o);
+    }
 }
 
 void mouseCallback(int button, int state, int x, int y)
@@ -463,20 +619,94 @@ void mouseCallback(int button, int state, int x, int y)
 	y = YMAX - y;
 	if(button == GLUT_LEFT_BUTTON && state == GLUT_DOWN)
 	{
+		switch(operation)
+		{
+			case LINE:
+			case RECTANGLE:
+			case FILLEDRECTANGLE:
+			case FILLEDTRIANGLE:
+			case TRIANGLE: 	if(inside_area(canvasXMIN, canvasXMAX, canvasYMIN, canvasYMAX, x, y))
+							{
+								oldx = x;
+								oldy = y;
+							}
+							break;
+		}
 		handleColorSelection(x, y);
 		handleMenuBar(x, y);
 		handleLeftOptions(x, y);
 		handleRightOptions(x, y);
 		switch(operation)
 		{
-			case SPIRAL: spiral(x, y);
-				break;
-			case LIMACON: limacon(x,y);
-				break;
-			case CARDIOD: cardiod(x, y);
-				break;
-			case THREELEAF: threeLeaf(x, y);
-				break;
+			case PENCIL: 	pencilStroke(x, y);
+							break;
+			case BRUSH: 	brushStroke(x, y);
+							break;
+			case SPRAY: 	sprayStroke(x, y);
+							break;
+			case ERAZER: 	erazerStroke(x, y);
+							break;
+			case SPIRAL: 	spiral(x, y);
+							break;
+			case LIMACON: 	limacon(x,y);
+							break;
+			case CARDIOD: 	cardiod(x, y);
+							break;
+			case THREELEAF:	threeLeaf(x, y);
+							break;
+			case FLOODFILL:	float pixels[3];
+							glReadPixels(x, y, 1.0, 1.0, GL_RGB, GL_FLOAT, pixels);
+							glPointSize(1);
+							floodfill(x, y, colors[clr], pixels);
+							glPointSize(size[BRUSHSIZEINDEX]);
+							break;
+		}
+		glFlush();
+	}
+	else if(button == GLUT_LEFT_BUTTON && state == GLUT_UP)
+	{
+		switch(operation)
+		{
+			case LINE:	if(!(oldx|oldy)) 
+							break;
+						if(inside_area(canvasXMIN, canvasXMAX, canvasYMIN, canvasYMAX, x, y))
+						{
+							drawLine(oldx, oldy, x, y);
+							oldx=0;oldy=0;
+						}							
+						break;
+			case TRIANGLE:	if(!(oldx|oldy)) 
+								break;
+							if(inside_area(canvasXMIN, canvasXMAX, canvasYMIN, canvasYMAX, x, y))
+							{
+								drawTriangle(oldx, oldy, x, y);
+								oldx=0;oldy=0;
+							}							
+							break;
+			case FILLEDTRIANGLE:	if(!(oldx|oldy)) 
+										break;
+									if(inside_area(canvasXMIN, canvasXMAX, canvasYMIN, canvasYMAX, x, y))
+									{
+										drawFilledTriangle(oldx, oldy, x, y);
+										oldx=0;oldy=0;
+									}							
+									break;
+			case RECTANGLE:	if(!(oldx|oldy)) 
+								break;
+							if(inside_area(canvasXMIN, canvasXMAX, canvasYMIN, canvasYMAX, x, y))
+							{
+								drawRectangle(oldx, oldy, x, y);
+								oldx=0;oldy=0;
+							}							
+							break;
+			case FILLEDRECTANGLE:	if(!(oldx|oldy)) 
+										break;
+									if(inside_area(canvasXMIN, canvasXMAX, canvasYMIN, canvasYMAX, x, y))
+									{
+										drawFilledRectangle(oldx, oldy, x, y);
+										oldx=0;oldy=0;
+									}							
+									break;
 		}
 	}
 }
@@ -502,6 +732,8 @@ void displayCallback()
 {
 	glClear(GL_COLOR_BUFFER_BIT);
 	drawBorder();
+	glColor3fv(colors[0]);
+
 	drawAllOptionBoxes();
 	drawColorPalette();
 	drawMenuBar();
@@ -521,6 +753,7 @@ void init()
 
 void main(int argc, char **argv)
 {
+	srand(time(NULL));
 	glutInit(&argc, argv);
 	glutInitDisplayMode(GLUT_SINGLE|GLUT_RGB);
 	glutInitWindowSize(XMAX, YMAX);
