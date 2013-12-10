@@ -40,6 +40,18 @@ void outlineMenuItem(int i)
 	glLineWidth(1);
 }
 
+void highLightMenuOption(int i)
+{
+	glColor3fv(colors[6]);
+	glBegin(GL_POLYGON);
+	glVertex2f(i * 0.1 * XMAX, 0.95 * YMAX);
+	glVertex2f((i + 1) * 0.1 * XMAX, 0.95 * YMAX);
+	glVertex2f((i + 1) * 0.1 * XMAX, YMAX);
+	glVertex2f(i * 0.1 * XMAX, YMAX);
+	glEnd();
+	glColor3fv(colors[clr]);
+}
+
 void drawMenuBar()
 {
 	int i;

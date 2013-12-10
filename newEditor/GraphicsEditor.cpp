@@ -13,8 +13,8 @@
 #define PI 3.1415
 
 #define NEW 100
-#define SAVE 101
-#define OPEN 102
+#define OPEN 101
+#define SAVE 102
 #define EXIT 103
 
 #define PENCIL 200
@@ -24,20 +24,28 @@
 #define LINE 204
 #define RECTANGLE 205
 #define FILLEDRECTANGLE 206
-#define CIRCLE 207
-#define TRIANGLE 208
-#define FILLEDTRIANGLE 209
+#define TRIANGLE 207
+#define FILLEDTRIANGLE 208
+#define CIRCLE 209
+#define FILLEDCIRCLE 210
+#define SPHERE 211
+#define FILLEDSPHERE 212
+#define CUBE 213
+#define FILLEDCUBE 214
 
 #define SPIRAL 300
 #define LIMACON 301
 #define CARDIOD 302
 #define THREELEAF 303
-#define SPHERE 304
-#define INNERCLIP 305
-#define OUTERCLIP 306
-#define SCALE 307
+
+#define INNERCLIP 304
+#define OUTERCLIP 305
+#define SCALE 306
+#define TRANSLATE 307
 #define ROTATE 308
-#define FLOODFILL 309
+#define REFLECT 309
+#define SHEAR 310
+#define FLOODFILL 311
 
 GLint XMAX = 1018;
 GLint YMAX = 700;
@@ -74,7 +82,14 @@ GLint clr = 0;
 GLint padding = 5;
 GLint optionHeight = 30;
 GLint operation;
-GLint oldx, oldy;
+GLint oldx, oldy, oldxMax, oldyMax;
+GLfloat matrix[2000][2000][3] = {0};
+GLfloat clipmatrix[500][500][3] = {0};
+long matrixSize = 2000 * 2000 * 3 * sizeof(long);
+GLint scaleDone = 0, translateDone = 0, shearDone = 0, rotateDone = 0, reflectDone = 0;
+float rotationAngle = 30.0 * PI / 180.0;
+float reflectIntercept = 0, reflectM = 1; 
+GLint shearX = 1, shearY = 0;
 
 extern int numberOfColorColumns, numberOfMenuItems, numberOfLeftOptionItems, numberOfRightOptionItems;
 
@@ -146,6 +161,64 @@ void drawFilledRectangle(int minx, int miny, int maxx, int maxy)
 	glVertex2f(maxx, miny);
 	glEnd();
 	glFlush();
+}
+
+void plotSymmetricPoints(int h,int k,int x,int y)
+{
+	drawPoint(x + h,y + k);
+	drawPoint(-x + h,y + k);
+	drawPoint(x + h,-y + k);
+	drawPoint(-x + h,-y + k);
+	drawPoint(y + h,x + k);
+	drawPoint(-y + h,x + k);
+	drawPoint(y + h,-x + k);
+	drawPoint(-y + h,-x + k);
+}
+
+void drawCircle(int xc, int yc, int r)
+{
+	if(inside_area(canvasXMIN, canvasXMAX, canvasYMIN, canvasYMAX, xc - r, yc))
+		if(inside_area(canvasXMIN, canvasXMAX, canvasYMIN, canvasYMAX, xc + r, yc))
+			if(inside_area(canvasXMIN, canvasXMAX, canvasYMIN, canvasYMAX, xc, yc + r))
+				if(inside_area(canvasXMIN, canvasXMAX, canvasYMIN, canvasYMAX, xc, yc - r))
+				{
+
+					glPointSize(1);
+					int d = 1 - r, x = 0, y = r;
+					while(y > x)
+					{
+						plotSymmetricPoints(xc, yc, x, y);
+						if(d < 0)	d += 2*x+3;
+						else
+						{
+							d += 2 * (x - y) + 5;
+							y--;
+						}
+						x++;
+					}
+					plotSymmetricPoints(xc, yc, x, y);
+					glFlush();
+					glPointSize(size[BRUSHSIZEINDEX]);
+				}
+}
+
+void drawFilledCircle(int xc, int yc, int r)
+{
+	if(inside_area(canvasXMIN, canvasXMAX, canvasYMIN, canvasYMAX, xc - r, yc))
+		if(inside_area(canvasXMIN, canvasXMAX, canvasYMIN, canvasYMAX, xc + r, yc))
+			if(inside_area(canvasXMIN, canvasXMAX, canvasYMIN, canvasYMAX, xc, yc + r))
+				if(inside_area(canvasXMIN, canvasXMAX, canvasYMIN, canvasYMAX, xc, yc - r))
+				{
+					int theta;
+					float conversionFactor = PI / 180.0;
+					glBegin(GL_POLYGON);
+					for(theta = 0; theta < 360; theta++)
+					{
+						glVertex2f(xc + r * cosf(conversionFactor * theta), yc + r * sinf(conversionFactor * theta)) ;
+					}
+					glEnd();
+					glFlush();
+				}
 }
 
 void pencilStroke(int x, int y)
@@ -269,7 +342,7 @@ void limacon(int cx, int cy)
 void cardiod(int cx, int cy)
 {
 	float t, x, y;
-	int a = 70, b = 40;
+	int a = 70;
 	if(cx < canvasXMIN || cy < canvasYMIN || cx > canvasXMAX || cy > canvasYMAX)
 		return;
 	glBegin(GL_LINE_LOOP);
@@ -286,7 +359,7 @@ void cardiod(int cx, int cy)
 void threeLeaf(int cx, int cy)
 {
 	float t, x, y;
-	int a = 70, b = 40;
+	int a = 70;
 	if(cx < canvasXMIN || cy < canvasYMIN || cx > canvasXMAX || cy > canvasYMAX)
 		return;
 	glBegin(GL_LINE_LOOP);
@@ -300,50 +373,183 @@ void threeLeaf(int cx, int cy)
 	glFlush();
 }
 
-void manualDrawSphere(int h,int k,int r)
+void drawCube(int x, int y, int size)
+{
+	glBegin(GL_LINE_LOOP);
+	glVertex2f(x, y);
+	glVertex2f(x + 0.812 * size, y + size * 0.406);
+	glVertex2f(x, y + size * 0.812);
+	glVertex2f(x - 0.812 * size, y + size * 0.406);
+	glEnd();
+
+	glBegin(GL_LINE_LOOP);
+	glVertex2f(x, y + size);
+	glVertex2f(x + 0.812 * size, y + size * 1.406);
+	glVertex2f(x, y + size * 1.812);
+	glVertex2f(x - 0.812 * size, y + size * 1.406);
+	glEnd();
+
+	glBegin(GL_LINES);
+	glVertex2f(x, y);
+	glVertex2f(x, y + size);
+	glVertex2f(x + 0.812 * size, y + size * 0.406);
+	glVertex2f(x + 0.812 * size, y + size * 1.406);
+	glVertex2f(x, y + size * 0.812);
+	glVertex2f(x, y + size * 1.812);
+	glVertex2f(x - 0.812 * size, y + size * 0.406);
+	glVertex2f(x - 0.812 * size, y + size * 1.406);
+	glEnd();
+	glFlush();
+}
+
+void drawFilledCube(int x, int y, int size)
+{
+	int altcolor = 1;
+	if(clr == 1)
+		altcolor = 3;
+	glBegin(GL_POLYGON);
+	glColor3fv(colors[altcolor]);
+	glVertex2f(x, y);
+	glColor3fv(colors[clr]);
+	glVertex2f(x + 0.812 * size, y + size * 0.406);
+	glVertex2f(x, y + size * 0.812);
+	glVertex2f(x - 0.812 * size, y + size * 0.406);
+	glEnd();
+
+	glBegin(GL_POLYGON);
+	glColor3fv(colors[altcolor]);
+	glVertex2f(x, y + size);
+	glColor3fv(colors[clr]);
+	glVertex2f(x + 0.812 * size, y + size * 1.406);
+	glVertex2f(x, y + size * 1.812);
+	glVertex2f(x - 0.812 * size, y + size * 1.406);
+	glEnd();
+
+	glBegin(GL_POLYGON);
+	glColor3fv(colors[altcolor]);
+	glVertex2f(x, y + size);
+	glColor3fv(colors[clr]);
+	glVertex2f(x, y);
+	glVertex2f(x + 0.812 * size, y + size * 0.406);
+	glVertex2f(x + 0.812 * size, y + size * 1.406);
+	glEnd();
+
+	glBegin(GL_POLYGON);
+	glColor3fv(colors[altcolor]);
+	glVertex2f(x, y + size);
+	glColor3fv(colors[clr]);
+	glVertex2f(x, y);
+	glVertex2f(x - 0.812 * size, y + size * 0.406);
+	glVertex2f(x - 0.812 * size, y + size * 1.406);
+	glEnd();
+
+	glColor3fv(colors[altcolor]);
+	glBegin(GL_LINES);
+	glVertex2f(x, y + size);
+	glVertex2f(x + 0.812 * size, y + size * 1.406);
+	glVertex2f(x, y + size);
+	glVertex2f(x - 0.812 * size, y + size * 1.406);
+	glVertex2f(x, y + size);
+	glVertex2f(x, y);
+	glEnd();
+	glColor3fv(colors[clr]);
+	glFlush();
+}
+
+void drawSphere(int h,int k,int r)
 {
 	float theta = 0, phi = 0, deltaTheta = PI / 20, deltaPhi = PI / 20;
 	float z1, x1, y1, z2, x2, y2, z3, x3, y3, z4, x4, y4;	
-	
-	glBegin(GL_QUAD_STRIP);
+	if(inside_area(canvasXMIN, canvasXMAX, canvasYMIN, canvasYMAX, h - r, k))
+		if(inside_area(canvasXMIN, canvasXMAX, canvasYMIN, canvasYMAX, h + r, k))
+			if(inside_area(canvasXMIN, canvasXMAX, canvasYMIN, canvasYMAX, h, k + r))
+				if(inside_area(canvasXMIN, canvasXMAX, canvasYMIN, canvasYMAX, h, k - r))
+				{
+					glBegin(GL_LINE_LOOP);
 
-	for(theta = 0; theta <= 2 * PI ; theta += deltaTheta)
-	{
-		for(phi = -PI; phi <= PI; phi += deltaPhi)
-		{
+					for(theta = 0; theta <= 2 * PI ; theta += deltaTheta)
+					{
+						for(phi = -PI; phi <= PI; phi += deltaPhi)
+						{
+				
+							z1 = r * sinf(phi + deltaPhi) * cosf(theta + deltaTheta);
+							x1 = r * sinf(phi + deltaPhi) * sinf(theta + deltaTheta);
+							y1 = r * cosf(phi + deltaPhi);
+				
+							z2 = r * sinf(phi) * cosf(theta + deltaTheta);
+							x2 = r * sinf(phi) * sinf(theta + deltaTheta);
+							y2 = r * cosf(phi);
+				
+							z3 = r * sinf(phi) * cosf(theta);
+							x3 = r * sinf(phi) * sinf(theta);
+							y3 = r * cosf(phi);
+				
+							z4 = r * sinf(phi + deltaPhi) * cosf(theta);
+							x4 = r * sinf(phi + deltaPhi) * sinf(theta);
+							y4 = r * cosf(phi + deltaPhi);
+				
+							glColor3fv(colors[clr]);
+							glVertex3f(h+x4,k+y4, z4);
+							glVertex3f(h+x1,k+y1, z1);
+							glVertex3f(h+x2,k+y2, z2);
+							glVertex3f(h+x3,k+y3, z3);
+						}
+					}
+					glEnd();
+					glFlush();
+				}	
+}
 
-			z1 = r * sinf(phi + deltaPhi) * cosf(theta + deltaTheta);
-			x1 = r * sinf(phi + deltaPhi) * sinf(theta + deltaTheta);
-			y1 = r * cosf(phi + deltaPhi);
+void drawFilledSphere(int h,int k,int r)
+{
+	float theta = 0, phi = 0, deltaTheta = PI / 20, deltaPhi = PI / 20;
+	float z1, x1, y1, z2, x2, y2, z3, x3, y3, z4, x4, y4;
 
-			z2 = r * sinf(phi) * cosf(theta + deltaTheta);
-			x2 = r * sinf(phi) * sinf(theta + deltaTheta);
-			y2 = r * cosf(phi);
+	if(inside_area(canvasXMIN, canvasXMAX, canvasYMIN, canvasYMAX, h - r, k))
+		if(inside_area(canvasXMIN, canvasXMAX, canvasYMIN, canvasYMAX, h + r, k))
+			if(inside_area(canvasXMIN, canvasXMAX, canvasYMIN, canvasYMAX, h, k + r))
+				if(inside_area(canvasXMIN, canvasXMAX, canvasYMIN, canvasYMAX, h, k - r))
+				{
+					glBegin(GL_QUADS);
 
-			z3 = r * sinf(phi) * cosf(theta);
-			x3 = r * sinf(phi) * sinf(theta);
-			y3 = r * cosf(phi);
-
-			z4 = r * sinf(phi + deltaPhi) * cosf(theta);
-			x4 = r * sinf(phi + deltaPhi) * sinf(theta);
-			y4 = r * cosf(phi + deltaPhi);
-
-			int altcolor = 0;
-			if(clr == 0)
-				altcolor = 1;
-
-			glColor3fv(colors[clr]);
-			glVertex3f(h+x4,k+y4, z4);
-			glColor3fv(colors[clr]);
-			glVertex3f(h+x1,k+y1, z1);
-			glColor3fv(colors[clr]);
-			glVertex3f(h+x2,k+y2, z2);
-			glColor3fv(colors[altcolor]);
-			glVertex3f(h+x3,k+y3, z3);
-		}
-	}
-	glEnd();
-	glFlush();
+					for(theta = 0; theta <= 2 * PI ; theta += deltaTheta)
+					{
+						for(phi = -PI; phi <= PI; phi += deltaPhi)
+						{
+				
+							z1 = r * sinf(phi + deltaPhi) * cosf(theta + deltaTheta);
+							x1 = r * sinf(phi + deltaPhi) * sinf(theta + deltaTheta);
+							y1 = r * cosf(phi + deltaPhi);
+				
+							z2 = r * sinf(phi) * cosf(theta + deltaTheta);
+							x2 = r * sinf(phi) * sinf(theta + deltaTheta);
+							y2 = r * cosf(phi);
+				
+							z3 = r * sinf(phi) * cosf(theta);
+							x3 = r * sinf(phi) * sinf(theta);
+							y3 = r * cosf(phi);
+				
+							z4 = r * sinf(phi + deltaPhi) * cosf(theta);
+							x4 = r * sinf(phi + deltaPhi) * sinf(theta);
+							y4 = r * cosf(phi + deltaPhi);
+				
+							int altcolor = 1;
+							if(clr == 1)
+								altcolor = 0;
+				
+							glColor3fv(colors[clr]);
+							glVertex3f(h+x4,k+y4, z4);
+							glColor3fv(colors[clr]);
+							glVertex3f(h+x1,k+y1, z1);
+							glColor3fv(colors[clr]);
+							glVertex3f(h+x2,k+y2, z2);
+							glColor3fv(colors[altcolor]);
+							glVertex3f(h+x3,k+y3, z3);
+						}
+					}
+					glEnd();
+					glFlush();
+				}
 }
 
 /*
@@ -385,7 +591,6 @@ void reshapeCallback(GLint newWidth, GLint newHeight)
 {
 	// Reshapes the window
 	// Input: new width and height of window
-
 	glViewport(0, 0, newWidth, newHeight);
 	XMAX = newWidth;
 	YMAX = newHeight;
@@ -395,9 +600,10 @@ void reshapeCallback(GLint newWidth, GLint newHeight)
 	canvasYMAX = 0.9 * YMAX;
 	glMatrixMode(GL_PROJECTION);
 	glLoadIdentity();
-	glOrtho(0, XMAX, 0, YMAX, -200, 200);
+	glOrtho(0, XMAX, 0, YMAX, -2000, 2000);
 	glMatrixMode(GL_MODELVIEW);
 	glutPostRedisplay();
+	glFlush();
 }
 
 void keyboardCallback(unsigned char key, int x, int y)
@@ -474,27 +680,55 @@ void handleColorSelection(int x, int y)
 void handleMenuBar(int x, int y)
 {
 	int i, option = -1;
+	char filename[30];
+	FILE * fp;
+
 	for(i = 0; i < numberOfMenuItems; i++)
 	{
 		if(inside_area(i * 0.1 * XMAX, (i + 1) * 0.1 * XMAX, 0.95 * YMAX, YMAX, x, y))
 		{
 			option = i;
+			drawAllOptionBoxes();
+			drawMenuBar();
+			highLightMenuOption(i);
+			labelMenuBar();
+			glFlush();
 			break;
 		}
 	}
 	if(option == -1)
 		return;
 	option += 100;
+	
 	switch(option)
 	{
-		case NEW: glutPostRedisplay();
-			break;
-		case SAVE: 
-			break;
-		case OPEN: 
-			break;
-		case EXIT: exit(0);
-			break;
+		case NEW:	operation = -1;
+					glutPostRedisplay();
+					break;
+		case SAVE:	glReadPixels(canvasXMIN , canvasYMIN , canvasXMAX, canvasYMAX, GL_RGB, GL_FLOAT, matrix);
+					printf("Enter the filename to save : ");
+					scanf("%s", filename);
+					fp = fopen(filename, "w");			
+					fwrite(matrix, matrixSize, sizeof(GLubyte), fp);
+					fclose(fp);
+					printf("\nContents saved in file %s\n", filename);	
+					break;
+		case OPEN:	printf("\nEnter filename to open : ");
+					scanf("%s", filename);
+					fp = fopen(filename, "r");
+					if(!fp)
+					{
+						printf("No such file file found.\n");
+						return;
+					}	
+					fread(matrix, matrixSize, sizeof(GLubyte), fp);
+					fclose(fp);
+					glRasterPos2i(canvasXMIN, canvasYMIN);
+					glDrawPixels(canvasXMAX, canvasYMAX, GL_RGB, GL_FLOAT, matrix);
+					printf("\nFile %s has been opened successfully\n", filename);
+					break;
+		case EXIT:	exit(0);
+					break;
 	}
 }
 
@@ -517,29 +751,6 @@ void handleLeftOptions(int x, int y)
 		return;
 	option += 200;
 	operation = option;
-	// switch(option)
-	// {
-	// 	case PENCIL: printf("At PENCIL\n");
-	// 		break;
-	// 	case BRUSH: printf("At BRUSH\n");
-	// 		break;
-	// 	case SPRAY: printf("At SPRAY\n");
-	// 		break;
-	// 	case ERAZER: printf("At ERAZER\n");
-	// 		break;
-	// 	case LINE: printf("At LINE\n");
-	// 		break;
-	// 	case RECTANGLE: printf("At RECTANGLE\n");
-	// 		break;
-	// 	case FILLEDRECTANGLE: printf("At FILLED RECTANGLE\n");
-	// 		break;
-	// 	case CIRCLE: printf("At CIRCLE\n");
-	// 		break;
-	// 	case TRIANGLE: printf("At TRIANGLE\n");
-	// 		break;
-	// 	case FILLEDTRIANGLE: printf("At FILLED TRIANGLE\n");
-	// 		break;
-	// }
 }
 
 void handleRightOptions(int x, int y)
@@ -561,39 +772,11 @@ void handleRightOptions(int x, int y)
 		return;
 	option += 300;
 	operation = option;
-	// switch(option)
-	// {
-	// 	case SPIRAL: printf("At SPIRAL\n");
-	// 		operation = option;		
-	// 		break;
-	// 	case LIMACON: printf("At LIMACON\n");
-	// 		operation = option;
-	// 		break;
-	// 	case CARDIOD: printf("At CARDIOD\n");
-	// 		operation = option;
-	// 		break;
-	// 	case THREELEAF: printf("At THREELEAF\n");
-	// 		operation = option;
-	// 		break;
-	// 	case SPHERE: printf("At SPHERE\n");
-	// 		break;
-	// 	case INNERCLIP: printf("At INNERCLIP\n");
-	// 		break;
-	// 	case OUTERCLIP: printf("At OUTERCLIP\n");
-	// 		break;
-	// 	case SCALE: printf("At SCALE:\n");
-	// 		break;
-	// 	case ROTATE: printf("At ROTATE\n");
-	// 		break;
-	// 	case FLOODFILL: printf("At FLOODFILL\n");
-	// 		operation = option;
-	// 		break;
-	// }
 }
 
 void floodfill(float pointx,float pointy,float f[3],float o[3])
 {
-    float intensity,pixels[3];
+    float pixels[3];
 	if(pointx < canvasXMIN || pointx > canvasXMAX || pointy < canvasYMIN || pointy > canvasYMAX)
 		return;
     glReadPixels(pointx,pointy,1.0,1.0,GL_RGB,GL_FLOAT,pixels);
@@ -619,16 +802,205 @@ void mouseCallback(int button, int state, int x, int y)
 	y = YMAX - y;
 	if(button == GLUT_LEFT_BUTTON && state == GLUT_DOWN)
 	{
+		if(translateDone)
+		{
+			if(inside_area(canvasXMIN, canvasXMAX, canvasYMIN, canvasYMAX, x, y))
+				if(inside_area(canvasXMIN, canvasXMAX, canvasYMIN, canvasYMAX, x + (oldxMax - oldx), y + (oldyMax - oldy)))
+				{
+					if(oldxMax < oldx)
+					{
+						oldxMax = oldxMax + oldx;
+						oldx = oldxMax - oldx;
+						oldxMax = oldxMax - oldx;
+					}
+					if(oldyMax < oldy)
+					{
+						oldyMax = oldyMax + oldy;
+						oldy = oldyMax - oldy;
+						oldyMax = oldyMax - oldy;
+					}
+					glReadPixels(oldx, oldy + 1, oldxMax - oldx - 1, oldyMax - oldy - 1, GL_RGB, GL_FLOAT, matrix);
+					glRasterPos2i(x, y);
+					glColor3fv(colors[1]);
+					drawFilledRectangle(oldx - 1, oldy, oldxMax, oldyMax + 1);
+					glColor3fv(colors[clr]);
+					glDrawPixels(oldxMax - oldx - 1, oldyMax - oldy - 1, GL_RGB, GL_FLOAT, matrix);
+					oldx = oldy = oldxMax = oldyMax = translateDone= 0;
+					glFlush();
+				}
+		}
+		if(scaleDone)
+		{
+			if(inside_area(canvasXMIN, canvasXMAX, canvasYMIN, canvasYMAX, x, y))
+				if(inside_area(canvasXMIN, canvasXMAX, canvasYMIN, canvasYMAX, x + (oldxMax - oldx), y + (oldyMax - oldy)))
+				{
+					if(oldxMax < oldx)
+					{
+						oldxMax = oldxMax + oldx;
+						oldx = oldxMax - oldx;
+						oldxMax = oldxMax - oldx;
+					}
+					if(oldyMax < oldy)
+					{
+						oldyMax = oldyMax + oldy;
+						oldy = oldyMax - oldy;
+						oldyMax = oldyMax - oldy;
+					}
+					glReadPixels(oldx, oldy + 1, oldxMax - oldx - 1, oldyMax - oldy - 1, GL_RGB, GL_FLOAT, matrix);
+					glRasterPos2i(canvasXMIN, canvasYMIN);
+					glDrawPixels(canvasXMAX, canvasYMAX, GL_RGB, GL_FLOAT, matrix);
+					glRasterPos2i(x, y);
+					glPixelZoom(2, 2);
+					glDrawPixels(oldxMax - oldx - 1, oldyMax - oldy - 1, GL_RGB, GL_FLOAT, matrix);
+					oldx = oldy = oldxMax = oldyMax = scaleDone= 0;
+					glPixelZoom(1, 1);
+					glFlush();					
+				}
+		}
+		if(shearDone)
+		{
+			if(inside_area(canvasXMIN, canvasXMAX, canvasYMIN, canvasYMAX, x, y))
+				if(inside_area(canvasXMIN, canvasXMAX, canvasYMIN, canvasYMAX, x + (oldxMax - oldx), y + (oldyMax - oldy)))
+				{
+					int i,j;
+					if(oldxMax < oldx)
+					{
+						oldxMax = oldxMax + oldx;
+						oldx = oldxMax - oldx;
+						oldxMax = oldxMax - oldx;
+					}
+					if(oldyMax < oldy)
+					{
+						oldyMax = oldyMax + oldy;
+						oldy = oldyMax - oldy;
+						oldyMax = oldyMax - oldy;
+					}
+					glReadPixels(oldx, oldy, 500, 500, GL_RGB, GL_FLOAT, clipmatrix);
+					glRasterPos2i(canvasXMIN, canvasYMIN);
+					glDrawPixels(canvasXMAX, canvasYMAX, GL_RGB, GL_FLOAT, matrix);
+					glColor3fv(colors[clr]);
+					for(i = 0;i<oldxMax - oldx - 1; i++)
+					{
+						for(j = 1;j<oldyMax - oldy; j++)
+						{
+							glColor3fv(clipmatrix[j][i]);
+							drawPoint(x+i+shearX*j, y+j+shearY*i);
+						}
+					}
+					glColor3fv(colors[clr]);
+					oldx = oldy = oldxMax = oldyMax = shearDone= 0;
+					glFlush();
+				}
+		}
+		if(rotateDone)
+		{
+			if(inside_area(canvasXMIN, canvasXMAX, canvasYMIN, canvasYMAX, x, y))
+				if(inside_area(canvasXMIN, canvasXMAX, canvasYMIN, canvasYMAX, x + (oldxMax - oldx), y + (oldyMax - oldy)))
+				{
+					int i,j;
+					if(oldxMax < oldx)
+					{
+						oldxMax = oldxMax + oldx;
+						oldx = oldxMax - oldx;
+						oldxMax = oldxMax - oldx;
+					}
+					if(oldyMax < oldy)
+					{
+						oldyMax = oldyMax + oldy;
+						oldy = oldyMax - oldy;
+						oldyMax = oldyMax - oldy;
+					}
+					glReadPixels(oldx, oldy, 500, 500, GL_RGB, GL_FLOAT, clipmatrix);
+					glRasterPos2i(canvasXMIN, canvasYMIN);
+					glDrawPixels(canvasXMAX, canvasYMAX, GL_RGB, GL_FLOAT, matrix);
+					glColor3fv(colors[clr]);
+					glPointSize(2);
+					for(i = 0;i<oldxMax - oldx - 1; i++)
+					{
+						for(j = 1;j<oldyMax - oldy; j++)
+						{
+							glColor3fv(clipmatrix[j][i]);
+							drawPoint((i) * cos(rotationAngle) - (j) * sin(rotationAngle) + x, (i) * sin(rotationAngle) + (j) * cos(rotationAngle) + y);
+						}
+					}
+					glPointSize(1);
+					glColor3fv(colors[clr]);
+					oldx = oldy = oldxMax = oldyMax = rotateDone= 0;
+					glFlush();
+				}
+		}
+		if(reflectDone)
+		{
+			if(inside_area(canvasXMIN, canvasXMAX, canvasYMIN, canvasYMAX, x, y))
+				if(inside_area(canvasXMIN, canvasXMAX, canvasYMIN, canvasYMAX, x + (oldxMax - oldx), y + (oldyMax - oldy)))
+				{
+					int i,j;
+					if(oldxMax < oldx)
+					{
+						oldxMax = oldxMax + oldx;
+						oldx = oldxMax - oldx;
+						oldxMax = oldxMax - oldx;
+					}
+					if(oldyMax < oldy)
+					{
+						oldyMax = oldyMax + oldy;
+						oldy = oldyMax - oldy;
+						oldyMax = oldyMax - oldy;
+					}
+					glReadPixels(oldx, oldy, 500, 500, GL_RGB, GL_FLOAT, clipmatrix);
+					glRasterPos2i(canvasXMIN, canvasYMIN);
+					glDrawPixels(canvasXMAX, canvasYMAX, GL_RGB, GL_FLOAT, matrix);
+					glColor3fv(colors[clr]);
+					glPointSize(2);
+					float reflectAngle = atan(reflectM) * 180.0 / PI;
+					glPushMatrix();
+					glTranslatef(0,reflectIntercept,0);
+					glRotatef(reflectAngle,0,0,1);
+					glScalef(1,-1,1);
+					glRotatef(-reflectAngle,0,0,1);
+					glTranslatef(0,-reflectIntercept,0);
+					for(i = 0;i<oldxMax - oldx - 1; i++)
+					{
+						for(j = 1;j<oldyMax - oldy; j++)
+						{
+							glColor3fv(clipmatrix[j][i]);
+							drawPoint(oldx+i,oldy+j);							
+							// drawPoint((x + i - oldx) * cos(2*rotationAngle) - (y + j - oldy) * sin(2*rotationAngle) + x, (x + i - oldx) * sin(2*rotationAngle) - (x + j -oldy) * cos(2*rotationAngle) + y);
+						}
+					}
+					glPopMatrix();
+					glPointSize(1);
+					glColor3fv(colors[clr]);
+					oldx = oldy = oldxMax = oldyMax = reflectDone= 0;
+					glFlush();
+				}
+		}
+
 		switch(operation)
 		{
 			case LINE:
+			case TRIANGLE:
+			case FILLEDTRIANGLE:
 			case RECTANGLE:
 			case FILLEDRECTANGLE:
-			case FILLEDTRIANGLE:
-			case TRIANGLE: 	if(inside_area(canvasXMIN, canvasXMAX, canvasYMIN, canvasYMAX, x, y))
+			case FILLEDCIRCLE:
+			case CIRCLE: 	
+			case SPHERE:
+			case FILLEDSPHERE:
+			case CUBE:
+			case FILLEDCUBE:
+			case OUTERCLIP:
+			case INNERCLIP:
+			case SCALE:
+			case TRANSLATE:
+			case ROTATE:
+			case REFLECT:
+			case SHEAR:
+							if(inside_area(canvasXMIN, canvasXMAX, canvasYMIN, canvasYMAX, x, y))
 							{
 								oldx = x;
 								oldy = y;
+								glReadPixels(canvasXMIN, canvasYMIN, canvasXMAX, canvasYMAX, GL_RGB, GL_FLOAT, matrix);
 							}
 							break;
 		}
@@ -673,7 +1045,7 @@ void mouseCallback(int button, int state, int x, int y)
 						{
 							drawLine(oldx, oldy, x, y);
 							oldx=0;oldy=0;
-						}							
+						}		
 						break;
 			case TRIANGLE:	if(!(oldx|oldy)) 
 								break;
@@ -681,7 +1053,7 @@ void mouseCallback(int button, int state, int x, int y)
 							{
 								drawTriangle(oldx, oldy, x, y);
 								oldx=0;oldy=0;
-							}							
+							}			
 							break;
 			case FILLEDTRIANGLE:	if(!(oldx|oldy)) 
 										break;
@@ -689,7 +1061,7 @@ void mouseCallback(int button, int state, int x, int y)
 									{
 										drawFilledTriangle(oldx, oldy, x, y);
 										oldx=0;oldy=0;
-									}							
+									}		
 									break;
 			case RECTANGLE:	if(!(oldx|oldy)) 
 								break;
@@ -697,7 +1069,7 @@ void mouseCallback(int button, int state, int x, int y)
 							{
 								drawRectangle(oldx, oldy, x, y);
 								oldx=0;oldy=0;
-							}							
+							}	
 							break;
 			case FILLEDRECTANGLE:	if(!(oldx|oldy)) 
 										break;
@@ -705,10 +1077,286 @@ void mouseCallback(int button, int state, int x, int y)
 									{
 										drawFilledRectangle(oldx, oldy, x, y);
 										oldx=0;oldy=0;
-									}							
+									}
 									break;
+			case CIRCLE: 	if(!(oldx|oldy)) 
+								break;
+							if(inside_area(canvasXMIN, canvasXMAX, canvasYMIN, canvasYMAX, x, y))
+							{
+								float r = sqrt((float)((x - oldx) * (x - oldx) + (y - oldy) * (y - oldy)));
+								drawCircle(oldx, oldy, r);
+								oldx=0;oldy=0;
+							}						
+							break;
+			case FILLEDCIRCLE:	if(!(oldx|oldy)) 
+									break;
+								if(inside_area(canvasXMIN, canvasXMAX, canvasYMIN, canvasYMAX, x, y))
+								{
+									float r = sqrt((float)((x - oldx) * (x - oldx) + (y - oldy) * (y - oldy)));
+									drawFilledCircle(oldx, oldy, r);
+									oldx=0;oldy=0;
+								}						
+								break;
+			case SPHERE: 	if(!(oldx|oldy)) 
+								break;
+							if(inside_area(canvasXMIN, canvasXMAX, canvasYMIN, canvasYMAX, x, y))
+							{
+								float r = sqrt((float)((x - oldx) * (x - oldx) + (y - oldy) * (y - oldy)));
+								drawSphere(oldx, oldy, r);
+								oldx=0;oldy=0;
+							}						
+							break;
+			case FILLEDSPHERE:	if(!(oldx|oldy)) 
+									break;
+								if(inside_area(canvasXMIN, canvasXMAX, canvasYMIN, canvasYMAX, x, y))
+								{
+									float r = sqrt((float)((x - oldx) * (x - oldx) + (y - oldy) * (y - oldy)));
+									drawFilledSphere(oldx, oldy, r);
+									oldx=0;oldy=0;
+								}
+								break;
+			case CUBE:	if(!(oldx|oldy)) 
+							break;
+						if(inside_area(canvasXMIN, canvasXMAX, canvasYMIN, canvasYMAX, x, y))
+						{
+							float r = sqrt((float)((x - oldx) * (x - oldx) + (y - oldy) * (y - oldy)));
+							drawCube(oldx, oldy, r);
+							oldx=0;oldy=0;
+						}
+						break;
+			case FILLEDCUBE:	if(!(oldx|oldy)) 
+									break;
+								if(inside_area(canvasXMIN, canvasXMAX, canvasYMIN, canvasYMAX, x, y))
+								{
+									float r = sqrt((float)((x - oldx) * (x - oldx) + (y - oldy) * (y - oldy)));
+									drawFilledCube(oldx, oldy, r);
+									oldx=0;oldy=0;
+								}
+								break;
+			case OUTERCLIP:	if(!(oldx|oldy)) 
+								break;
+							if(inside_area(canvasXMIN, canvasXMAX, canvasYMIN, canvasYMAX, x, y))
+							{
+								if(oldx > x)
+								{
+									oldx = oldx + x;
+									x = oldx - x;
+									oldx = oldx - x;
+								}
+								if(oldy > y)
+								{
+									oldy = oldy + y;
+									y = oldy - y;
+									oldy = oldy - y;
+								}
+								glReadPixels(oldx, oldy, x - oldx, y - oldy, GL_RGB, GL_FLOAT, matrix);
+								glColor3fv(colors[1]);
+								drawFilledRectangle(canvasXMIN, canvasYMIN, canvasXMAX, canvasYMAX);
+								glRasterPos2i(oldx, oldy);
+								glDrawPixels(x - oldx, y - oldy, GL_RGB, GL_FLOAT, matrix);
+								drawRectangle(oldx, oldy, x, y);
+								glColor3fv(colors[clr]);
+								oldx=0;oldy=0;
+								glFlush();
+							}
+							break;
+			case INNERCLIP:	if(!(oldx|oldy)) 
+								break;
+							if(inside_area(canvasXMIN, canvasXMAX, canvasYMIN, canvasYMAX, x, y))
+							{
+								glRasterPos2i(canvasXMIN, canvasYMIN);
+								glDrawPixels(canvasXMAX, canvasYMAX, GL_RGB, GL_FLOAT, matrix);
+								glColor3fv(colors[1]);
+								drawFilledRectangle(oldx, oldy, x, y);
+								glColor3fv(colors[clr]);
+								oldx=0;oldy=0;
+							}		
+							break;
+			case SCALE:	if(!(oldx|oldy)) 
+							break;
+						if(inside_area(canvasXMIN, canvasXMAX, canvasYMIN, canvasYMAX, x, y))
+						{
+							oldxMax = x;
+							oldyMax = y;
+							scaleDone = 1;
+						}	
+						break;
+			case TRANSLATE:	if(!(oldx|oldy)) 
+								break;
+							if(inside_area(canvasXMIN, canvasXMAX, canvasYMIN, canvasYMAX, x, y))
+							{
+								oldxMax = x;
+								oldyMax = y;
+								translateDone = 1;
+							}		
+							break;
+			case SHEAR:	if(!(oldx|oldy)) 
+							break;
+						if(inside_area(canvasXMIN, canvasXMAX, canvasYMIN, canvasYMAX, x, y))
+						{
+							oldxMax = x;
+							oldyMax = y;
+							shearDone = 1;
+						}	
+						break;
+			case ROTATE:	if(!(oldx|oldy)) 
+								break;
+							if(inside_area(canvasXMIN, canvasXMAX, canvasYMIN, canvasYMAX, x, y))
+							{
+								oldxMax = x;
+								oldyMax = y;
+								rotateDone = 1;
+							}	
+							break;
+			case REFLECT:	if(!(oldx|oldy)) 
+								break;
+							if(inside_area(canvasXMIN, canvasXMAX, canvasYMIN, canvasYMAX, x, y))
+							{
+								oldxMax = x;
+								oldyMax = y;
+								reflectDone = 1;
+							}	
+							break;
 		}
 	}
+}
+
+void mouseMotionCallback(int x, int y)
+{
+	y = YMAX - y;
+	switch(operation)
+	{
+		case PENCIL:	pencilStroke(x, y);
+						break;
+		case BRUSH:		brushStroke(x, y);
+						break;
+		case ERAZER:	erazerStroke(x, y);
+						break;
+		case SPRAY:		sprayStroke(x, y);
+						break;
+		case LINE:		if(!(oldx|oldy)) 
+							break;
+						if(inside_area(canvasXMIN, canvasXMAX, canvasYMIN, canvasYMAX, x, y))
+						{
+							glRasterPos2i(canvasXMIN, canvasYMIN);
+							glDrawPixels(canvasXMAX, canvasYMAX, GL_RGB, GL_FLOAT, matrix);
+							drawLine(oldx, oldy, x, y);
+						}							
+						break;
+		case TRIANGLE:	if(!(oldx|oldy)) 
+							break;
+						if(inside_area(canvasXMIN, canvasXMAX, canvasYMIN, canvasYMAX, x, y))
+						{
+							glRasterPos2i(canvasXMIN, canvasYMIN);
+							glDrawPixels(canvasXMAX, canvasYMAX, GL_RGB, GL_FLOAT, matrix);
+							drawTriangle(oldx, oldy, x, y);
+						}							
+						break;
+		case FILLEDTRIANGLE:	if(!(oldx|oldy)) 
+									break;
+								if(inside_area(canvasXMIN, canvasXMAX, canvasYMIN, canvasYMAX, x, y))
+								{
+									glRasterPos2i(canvasXMIN, canvasYMIN);
+									glDrawPixels(canvasXMAX, canvasYMAX, GL_RGB, GL_FLOAT, matrix);
+									drawFilledTriangle(oldx, oldy, x, y);
+								}							
+								break;
+		case FILLEDRECTANGLE:	if(!(oldx|oldy)) 
+									break;
+								if(inside_area(canvasXMIN, canvasXMAX, canvasYMIN, canvasYMAX, x, y))
+								{
+									glRasterPos2i(canvasXMIN, canvasYMIN);
+									glDrawPixels(canvasXMAX, canvasYMAX, GL_RGB, GL_FLOAT, matrix);
+									drawFilledRectangle(oldx, oldy, x, y);
+								}							
+								break;
+		case RECTANGLE: if(!(oldx|oldy)) 
+							break;
+						if(inside_area(canvasXMIN, canvasXMAX, canvasYMIN, canvasYMAX, x, y))
+						{
+							glRasterPos2i(canvasXMIN, canvasYMIN);
+							glDrawPixels(canvasXMAX, canvasYMAX, GL_RGB, GL_FLOAT, matrix);
+							drawRectangle(oldx, oldy, x, y);
+						}							
+						break;
+		case CIRCLE:	if(!(oldx|oldy)) 
+							break;
+						if(inside_area(canvasXMIN, canvasXMAX, canvasYMIN, canvasYMAX, x, y))
+						{
+							glRasterPos2i(canvasXMIN, canvasYMIN);
+							glDrawPixels(canvasXMAX, canvasYMAX, GL_RGB, GL_FLOAT, matrix);
+							float r = sqrt((float)((x - oldx) * (x - oldx) + (y - oldy) * (y - oldy)));
+							drawCircle(oldx, oldy, r);
+						}							
+						break;
+		case FILLEDCIRCLE: 	if(!(oldx|oldy)) 
+								break;
+							if(inside_area(canvasXMIN, canvasXMAX, canvasYMIN, canvasYMAX, x, y))
+							{
+								glRasterPos2i(canvasXMIN, canvasYMIN);
+								glDrawPixels(canvasXMAX, canvasYMAX, GL_RGB, GL_FLOAT, matrix);
+								float r = sqrt((float)((x - oldx) * (x - oldx) + (y - oldy) * (y - oldy)));
+								drawFilledCircle(oldx, oldy, r);
+							}							
+							break;
+		case SPHERE:	if(!(oldx|oldy)) 
+							break;
+						if(inside_area(canvasXMIN, canvasXMAX, canvasYMIN, canvasYMAX, x, y))
+						{
+							glRasterPos2i(canvasXMIN, canvasYMIN);
+							glDrawPixels(canvasXMAX, canvasYMAX, GL_RGB, GL_FLOAT, matrix);
+							float r = sqrt((float)((x - oldx) * (x - oldx) + (y - oldy) * (y - oldy)));
+							drawSphere(oldx, oldy, r);
+						}							
+						break;
+		case FILLEDSPHERE:	if(!(oldx|oldy)) 
+								break;
+							if(inside_area(canvasXMIN, canvasXMAX, canvasYMIN, canvasYMAX, x, y))
+							{
+								glRasterPos2i(canvasXMIN, canvasYMIN);
+								glDrawPixels(canvasXMAX, canvasYMAX, GL_RGB, GL_FLOAT, matrix);
+								float r = sqrt((float)((x - oldx) * (x - oldx) + (y - oldy) * (y - oldy)));
+								drawFilledSphere(oldx, oldy, r);
+							}							
+							break;
+		case CUBE:	if(!(oldx|oldy)) 
+								break;
+					if(inside_area(canvasXMIN, canvasXMAX, canvasYMIN, canvasYMAX, x, y))
+					{
+						glRasterPos2i(canvasXMIN, canvasYMIN);
+						glDrawPixels(canvasXMAX, canvasYMAX, GL_RGB, GL_FLOAT, matrix);
+						float r = sqrt((float)((x - oldx) * (x - oldx) + (y - oldy) * (y - oldy)));
+						drawCube(oldx, oldy, r);
+					}							
+					break;
+		case FILLEDCUBE:	if(!(oldx|oldy)) 
+								break;
+							if(inside_area(canvasXMIN, canvasXMAX, canvasYMIN, canvasYMAX, x, y))
+							{
+								glRasterPos2i(canvasXMIN, canvasYMIN);
+								glDrawPixels(canvasXMAX, canvasYMAX, GL_RGB, GL_FLOAT, matrix);
+								float r = sqrt((float)((x - oldx) * (x - oldx) + (y - oldy) * (y - oldy)));
+								drawFilledCube(oldx, oldy, r);
+							}							
+							break;
+		case OUTERCLIP:
+		case INNERCLIP:
+		case SCALE:
+		case TRANSLATE:
+		case SHEAR:
+		case ROTATE:
+		case REFLECT:
+						if(!(oldx|oldy)) 
+							break;
+						if(inside_area(canvasXMIN, canvasXMAX, canvasYMIN, canvasYMAX, x, y))
+						{
+							glRasterPos2i(canvasXMIN, canvasYMIN);
+							glDrawPixels(canvasXMAX, canvasYMAX, GL_RGB, GL_FLOAT, matrix);
+							drawRectangle(oldx, oldy, x, y);
+						}
+						break;
+	}
+	glFlush();
 }
 
 // Helper functions for display
@@ -746,7 +1394,7 @@ void init()
 	glMatrixMode(GL_PROJECTION);
 	glLoadIdentity();
 	glColor3f(0, 0, 0);
-	glOrtho(0, XMAX, 0, YMAX, 200, -200);
+	glOrtho(0, XMAX, 0, YMAX, -2000, 2000);
 	glMatrixMode(GL_MODELVIEW);
 	glLoadIdentity();
 }
@@ -762,6 +1410,7 @@ void main(int argc, char **argv)
 	glutReshapeFunc(reshapeCallback);
 	glutKeyboardFunc(keyboardCallback);
 	glutMouseFunc(mouseCallback);
+	glutMotionFunc(mouseMotionCallback);
 	glutDisplayFunc(displayCallback);
 	glutMainLoop();
 }
