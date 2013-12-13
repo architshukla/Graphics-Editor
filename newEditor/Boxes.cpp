@@ -8,10 +8,10 @@ extern GLint padding;
 extern GLint optionHeight;
 extern void writeTextH12(char *, int, int);
 
-char leftOptionNames[][20] = {"Pencil", "Brush", "Spray", "Erazer", "Line", "Rectangle", "Filled Rectangle", "Triangle", "Filled Triangle", "Circle", "Filled Circle", "Sphere", "Solid Sphere", "Cube", "Solid Cube"};
-int numberOfLeftOptionItems = 15;
+char leftOptionNames[][20] = {"Pencil", "Brush", "Spray", "Erazer", "Line", "Rectangle", "Filled Rectangle", "Triangle", "Filled Triangle", "Circle", "Filled Circle", "Cube", "Solid Cube"};
+int numberOfLeftOptionItems = 13;
 
-char rightOptionNames[][20] = {"Spiral", "Limacon", "Cardiod", "Three Leaf", "Inner Clip", "Outer Clip", "Scale", "Translate", "Rotate", "Reflect", "Shear", "Line Pattern", "Polygon Pattern"};
+char rightOptionNames[][20] = {"Spiral", "Limacon", "Cardiod", "Three Leaf", "Inner Clip", "Outer Clip", "Scale", "Translate", "Rotate", "Reflect", "Shear", "Sphere", "Solid Sphere"};
 int numberOfRightOptionItems = 13;
 
 void labelLeftOptionBoxes()
